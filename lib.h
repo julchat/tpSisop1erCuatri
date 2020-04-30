@@ -1,3 +1,5 @@
+#ifndef LIB_H_
+#define LIB_H_
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -10,6 +12,7 @@
 #include<sys/socket.h>
 #include<netdb.h>
 #include<string.h>
+
 
 //--------------------------------------------------------------------------------- Estructura de paquetes
 
@@ -55,6 +58,11 @@ t_config* leer_config(char* ruta){
 	}
 
 	return config;
+}
+
+void liberar_conexion(int socket_cliente)
+{
+	close(socket_cliente);
 }
 
 void terminar_programa(int conexion, t_log* logger, t_config* config){
@@ -142,8 +150,6 @@ char* recibir_mensaje(int socket_cliente){
 	return buffer;
 }
 
-void liberar_conexion(int socket_cliente)
-{
-	close(socket_cliente);
-}
 
+
+#endif
