@@ -9,21 +9,59 @@
 #define TEAM_SRC_TEAM_H_
 
 typedef struct{
-	especie* objetivos;
-	especie* capturados;
-	double ubicacionX;
-	double ubicacionY;
+	especie pokemon;
+	listapokemon* sig;
+} listapokemon;
+
+typedef struct{
+	listapokemon* capturados;
+	listapokemon* objetivos;
+	t_posicion posicion;
 } entrenador;
+
+typedef struct{
+	entrenador trainer;
+	listaentrenadores* sig;
+} listaentrenadores;
 
 typedef struct{
 	char* nombre;
 } especie;
 
-typedef struct{
-	double* coordenadasX;
-	double* coordenadasY;
 
+
+typedef struct{
+	listaposicion* posiciones;
+	listapokemon* poseidos;
+	listapokemon* objetivos;
+	int contimer;
+	int retardo;
+	char* algoritmo;
+	int quantum;
+	int estim;
+	char* ip;
+	char* puerto;
+	char* logpath;
 } infoInicializacion;
 
+
+typedef struct{
+	uint32_t posicion_X;
+	uint32_t posicion_Y;
+}t_posicion;
+
+typedef struct{
+	t_posicion posicion;
+	listaposicion* sig;
+} listaposicion ;
+
+typedef struct{
+	pthread_t hiloentrenador;
+	pthread_nodo* sig;
+}pthread_nodo;
+
+listaentrenadores* armarEntrenadores(infoInicializacion);
+void buscarPokemones(entrenador);
+void asignarObjetivosGlobales(listaentrenadores* , int );
 
 #endif /* TEAM_SRC_TEAM_H_ */
