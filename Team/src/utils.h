@@ -14,9 +14,9 @@
 #include <pthread.h>
 #include "libbase.h"
 
-
-int tamanioListaEntrenadores(listaentrenadores* entrenadores);
-bool listaVacia(void* lista);
+entrenador crearEntrenador();
+void agregarCaracter(char** buffer, char c);
+void inicializarListas(infoInicializacion*);
 infoInicializacion obtenerConfiguracion(FILE* configfile);
 
 

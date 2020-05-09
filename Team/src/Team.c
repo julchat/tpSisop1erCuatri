@@ -6,48 +6,49 @@
 #include "libbase.h"
 #include "utils.c"
 #include "utils.h"
-listapokemon* objetivosGlobales;
+t_list* objetivosGlobales;
 
 
 int main(){
-	pthread_nodo* hilosentrenadores;
+	objetivosGlobales = list_create();
+	t_list* hilosentrenadores = list_create();
 	FILE* configfile;
-	listaentrenadores* entrenadores;
+	t_list* entrenadores = list_create();
 	char* ip;
 	char* puerto;
 	int socket;
 	configfile = fopen("configFile.txt","r");
-	int cantEntrenadores;
 	infoInicializacion configuracion;
+	inicializarListas(&configuracion);
 	configuracion = obtenerConfiguracion(configfile);
 	fclose(configfile);
 	ip = configuracion.ip;
 	puerto = configuracion.puerto;
 	socket = crear_conexion(ip,puerto);
 	entrenadores = armarEntrenadores(configuracion);
-	cantEntrenadores = tamanioListaEntrenadores(entrenadores);
-	asignarObjetivosGlobales(entrenadores,cantEntrenadores);
-	hilosentrenadores = (pthread_nodo*)malloc(cantEntrenadores*sizeof(pthread_nodo));
+	asignarObjetivosGlobales(entrenadores);
+	/*hilosentrenadores = (pthread_nodo*)malloc(cantEntrenadores*sizeof(pthread_nodo));
 	for(int i=0; i<cantEntrenadores && !listaVacia(hilosentrenadores) && !listaVacia(entrenadores);i++ ){
-		pthread_create(&(hilosentrenadores->hiloentrenador),NULL,buscarPokemones,&(entrenadores->trainer));
+		pthread_create(&(hilosentrenadores->hiloentrenador),NULL,(void*)buscarPokemones,&(entrenadores->trainer));
 		hilosentrenadores = hilosentrenadores->sig;
 		entrenadores = entrenadores->sig;
-	}
+	}*/
 	//TODO: El resto del main va a ser a) actuar de planificador b) administrar colas de mensajes
 	return 0;
 
 }
+
+
+
 void buscarPokemones(entrenador trainer){
  //TODO: banda de cosas indescriptibles //
 }
 
-void asignarObjetivosGlobales(listaentrenadores* entrenadores, int cantEntrenadores){
-	for(int i=0; i<cantEntrenadores && !(listaVacia(entrenadores)) ;i++){
+void asignarObjetivosGlobales(t_list* entrenadores){
 
-	}
 }
 
-listaentrenadores* armarEntrenadores(infoInicializacion){
+t_list* armarEntrenadores(infoInicializacion configuracion){
 	return 0; //TODO: A partir de las coordenadas y los pokemones poseidos y atrapados, armar una lista de entrenadores//
 }
 
