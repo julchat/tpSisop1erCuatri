@@ -24,8 +24,14 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 	t_list* poseidos = list_create();
 	t_list* posicionesX = list_create();
 	t_list* posicionesY = list_create();
-	entrenador trainer = crearEntrenador();
-	char c;
+	void (*punteroAFuncion)();
+	punteroAFuncion = &free;
+	void (*punteroAFuncion2)(t_list*,void(*element_destroyer)(void*));
+	punteroAFuncion2 = &list_destroy_and_destroy_elements;
+	char c= '\0';
+
+	// PRIMERA LÍNEA
+
 	while(c!='=' && (!feof(configfile))){
 		c = fgetc(configfile);
 	}
@@ -46,41 +52,127 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 			fgetc(configfile);
 		}
 
+	// SEGUNDA LÍNEA
+
+
 	while(c!='=' && (!feof(configfile))){
 			c = fgetc(configfile);
 		}
-	 	 fgetc(configfile);
 	while(c!=']' && !feof(configfile)){
-		while(c!=','){
+		c = fgetc(configfile);
+		while(c!=',' && c!=']'){
 			c = fgetc(configfile);
-			while(c!='|', c!= ','){
+			while(c!='|' && c!= ',' && c!=']'){
 				agregarCaracter(&buffer,c);
 				c= fgetc(configfile);
-
 			}
 		list_add(pokemonesPoseidos,buffer);
 		buffer = vaciarBuffer(buffer);
 		}
 		list_add(poseidos, pokemonesPoseidos);
-
+		list_destroy_and_destroy_elements(pokemonesPoseidos,punteroAFuncion);
+		pokemonesPoseidos = list_create();
 	}
 
+	// TERCERA LÍNEA
 
-//TODO: Meter toda la info de configFile.txt en configcargada, ordenando bien las posiciones //
-	return config;}
+	while(c!='=' && (!feof(configfile))){
+				c = fgetc(configfile);
+			}
+		while(c!=']' && !feof(configfile)){
+			c = fgetc(configfile);
+			while(c!=',' && c!=']'){
+				c = fgetc(configfile);
+				while(c!='|' && c!= ',' && c!=']'){
+					agregarCaracter(&buffer,c);
+					c= fgetc(configfile);
+				}
+			list_add(pokemonesObjetivos,buffer);
+			buffer = vaciarBuffer(buffer);
+			}
+			list_add(objetivos, pokemonesObjetivos);
+			list_destroy_and_destroy_elements(pokemonesObjetivos,punteroAFuncion);
+			pokemonesObjetivos = list_create();
+		}
+
+		//CUARTA LÍNEA
+
+	while(c!='=' && (!feof(configfile))){
+	c = fgetc(configfile);
+	}
+	fscanf(configfile,"%i",&(config.contimer));
+
+		// QUINTA LÍNEA
+
+	while(c!='=' && (!feof(configfile))){
+	c = fgetc(configfile);
+	}
+	fscanf(configfile,"%i",&(config.retardo));
+
+		// SEXTA LÍNEA
+
+	while(c!='=' && (!feof(configfile))){
+	c = fgetc(configfile);
+	}
+	fscanf(configfile,"%s",(config.algoritmo));
+
+		// SÉPTIMA LÍNEA
+
+	while(c!='=' && (!feof(configfile))){
+	c = fgetc(configfile);
+	}
+	fscanf(configfile,"%i",&(config.quantum));
+
+		// OCTAVA LÍNEA
+
+	while(c!='=' && (!feof(configfile))){
+	c = fgetc(configfile);
+	}
+	fscanf(configfile,"%i",&(config.estim));
+
+		// NOVENA LÍNEA
+
+	while(c!='=' && (!feof(configfile))){
+	c = fgetc(configfile);
+	}
+	fscanf(configfile,"%s",(config.ip));
+
+		// DÉCIMA LÍNEA
+
+	while(c!='=' && (!feof(configfile))){
+	c = fgetc(configfile);
+	}
+	fscanf(configfile,"%s",(config.puerto));
+
+		// UNDÉCIMA LÍNEA
+
+	while(c!='=' && (!feof(configfile))){
+	c = fgetc(configfile);
+	}
+	fscanf(configfile,"%s",(config.logpath));
+
+		// ASIGNACIONES RESTANTES
+	!feof(configfile)?printf("parser todo bien"):printf("ripeo el parser");
+	config.posicionesX = posicionesX;
+	config.posicionesY = posicionesY;
+	config.poseidos = poseidos;
+	config.objetivos = objetivos;
+	list_destroy(pokemonesObjetivos); //Estas dos están vacías
+	list_destroy(pokemonesPoseidos); // por eso no uso la otra destroy
+	list_destroy(posicionesX);
+	list_destroy(posicionesY);
+	list_destroy_and_destroy_elements(poseidos,punteroAFuncion2(,punteroAFuncion);
+	list_destroy_and_destroy_elements(objetivos,punteroAFuncion2(,punteroAFuncion));
+	return config;
+}
 
 void inicializarListas(infoInicializacion* configuracion){
 	configuracion->objetivos = list_create();
-	configuracion->posiciones = list_create();
+	configuracion->posicionesX = list_create();
+	configuracion->posicionesY = list_create();
 	configuracion->poseidos = list_create();
 }
 
-entrenador crearEntrenador(){
-	entrenador trainer;
-	trainer.objetivos = list_create();
-	trainer.poseidos = list_create();
-	return trainer;
-}
 
 
 void agregarCaracter(char** buffer, char c){
@@ -98,3 +190,4 @@ char* vaciarBuffer (char* bufferViejo){
 	*bufferNuevo = '\0';
 	return bufferNuevo;
 }
+

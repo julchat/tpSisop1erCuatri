@@ -41,9 +41,11 @@ typedef struct
 
 typedef struct
 {
-	t_list* posiciones;
+	t_list* posicionesX;
+	t_list* posicionesY;
 	t_list* poseidos;
 	t_list* objetivos;
+	t_list* entrenadores;
 	int contimer;
 	int retardo;
 	char* algoritmo;

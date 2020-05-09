@@ -19,5 +19,6 @@ void agregarCaracter(char** buffer, char c);
 void inicializarListas(infoInicializacion*);
 infoInicializacion obtenerConfiguracion(FILE* configfile);
 char* vaciarBuffer (char* bufferViejo);
+void liberarBuffer (void* buffer);
 
 #endif /* TEAM_SRC_UTILS_H_ */
