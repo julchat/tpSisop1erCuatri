@@ -18,6 +18,6 @@ entrenador crearEntrenador();
 void agregarCaracter(char** buffer, char c);
 void inicializarListas(infoInicializacion*);
 infoInicializacion obtenerConfiguracion(FILE* configfile);
-
+char* vaciarBuffer (char* bufferViejo);
 
 #endif /* TEAM_SRC_UTILS_H_ */

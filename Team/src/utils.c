@@ -15,7 +15,8 @@
 
 infoInicializacion obtenerConfiguracion(FILE* configfile){
 	infoInicializacion config;
-	char* buffer = {'\0'};
+	char* buffer = (char*) malloc(sizeof(char));
+	*buffer = '\0';
 	int posicionX, posicionY;
 	t_list* pokemonesObjetivos = list_create();
 	t_list* pokemonesPoseidos = list_create();
@@ -25,15 +26,15 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 	t_list* posicionesY = list_create();
 	entrenador trainer = crearEntrenador();
 	char c;
-	while(!feof(configfile)){
-	while(c!='=' && c!=']'){
+	while(c!='=' && (!feof(configfile))){
 		c = fgetc(configfile);
-		while(c!=']'){
+	}
+		while(c!=']' &&  c!='=' && !feof(configfile)){
 			c = fgetc(configfile);
 			agregarCaracter(&buffer, c);
 			posicionX = atoi(buffer);
 			list_add(posicionesX,&posicionX);
-			char* buffer = {'\0'};
+			buffer = vaciarBuffer(buffer);
 			if(fgetc(configfile)!='|'){
 				printf("error en parsing posiciones |");
 			}
@@ -41,40 +42,33 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 			agregarCaracter(&buffer,c);
 			posicionY = atoi(buffer);
 			list_add(posicionesY,&posicionY);
-			char* buffer = {'\0'};
+			buffer = vaciarBuffer(buffer);
 			fgetc(configfile);
 		}
 
-	}
-
-	while(c!='=' && c!=']'){
+	while(c!='=' && (!feof(configfile))){
 			c = fgetc(configfile);
-			while(c!=']'){
-				while(c!='|'){
-					buffer = NULL;
-					buffer = (char*)malloc(sizeof(char));
-
-				}
-				c = fgetc(configfile);
-				buffer = &c;
-				posicionX = atoi(buffer);
-				list_add(posicionesX,&posicionX);
-				if(fgetc(configfile)!='|'){
-					printf("error en parsing posiciones |");
-				}
-				c = fgetc(configfile);
-				buffer = &c;
-				posicionY = atoi(buffer);
-				list_add(posicionesY,&posicionY);
-				fgetc(configfile);
-			}
-
 		}
+	 	 fgetc(configfile);
+	while(c!=']' && !feof(configfile)){
+		while(c!=','){
+			c = fgetc(configfile);
+			while(c!='|', c!= ','){
+				agregarCaracter(&buffer,c);
+				c= fgetc(configfile);
+
+			}
+		list_add(pokemonesPoseidos,buffer);
+		buffer = vaciarBuffer(buffer);
+		}
+		list_add(poseidos, pokemonesPoseidos);
+
+	}
 
 
 //TODO: Meter toda la info de configFile.txt en configcargada, ordenando bien las posiciones //
-	}return config;
-}
+	return config;}
+
 void inicializarListas(infoInicializacion* configuracion){
 	configuracion->objetivos = list_create();
 	configuracion->posiciones = list_create();
@@ -91,8 +85,16 @@ entrenador crearEntrenador(){
 
 void agregarCaracter(char** buffer, char c){
 	size_t len = strlen(*buffer);
+	free(*buffer);
 	char* buffer2 = malloc(len+1+1);
 	buffer2[len] = c;
 	buffer2[len+1] = '\0';
 	*buffer = buffer2;
+}
+
+char* vaciarBuffer (char* bufferViejo){
+	free(bufferViejo);
+	char* bufferNuevo = (char*) malloc(sizeof(char));
+	*bufferNuevo = '\0';
+	return bufferNuevo;
 }
