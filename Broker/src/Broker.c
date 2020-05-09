@@ -14,7 +14,7 @@ char* ip_broker;
 int socket_client;
 
 
-config = leer_config("/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker");
+config = leer_config("/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker"); //Esto solo va a funcionar en la compu de juan
 //config_set_value(config,"TAMANO_MEMORIA",aca va el valor del tamaño [Numerico]);
 //config_set_value(config,"TAMANO_MINIMO_PARTICION",aca va el valor del tamaño minimo de particion[Numerico]);
 //config_set_value(config,"ALGORITMO_MEMORIA",aca va el valor del algoritmo de memoria[String]);
