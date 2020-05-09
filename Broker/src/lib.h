@@ -166,12 +166,6 @@ typedef struct{
 }t_nombre_pokemon;
 
 
-/*typedef struct{
-	t_posicion posicion;
-	t_nodo_posicion* siguiente;
-}t_nodo_posicion;*/
-
-
 typedef struct{
 	t_nombre_pokemon nombre;
 	t_posicion posicion;
@@ -183,7 +177,7 @@ typedef struct{
 typedef struct{
 	t_nombre_pokemon nombre;
 	uint32_t cantidad_coordenadas;
-	t_posicion posiciones[cantidad_coordenadas];
+	t_posicion posiciones[];
 
 }Localized_Pokemon;
 

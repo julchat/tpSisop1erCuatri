@@ -3,6 +3,7 @@
 #include "lib.h"
 #include <pthread.h>
 #include <sys/socket.h>
+// commons/collections/list.h
 
 
 int main(void) {
@@ -12,6 +13,10 @@ t_log* logger;
 char* puerto_broker;
 char* ip_broker;
 int socket_client;
+
+//Bloque memoria -> para los mensajes
+
+
 
 
 config = leer_config("/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker"); //Esto solo va a funcionar en la compu de juan
@@ -37,29 +42,18 @@ socket_client = crear_conexion(ip_broker,puerto_broker);
 
 	while(1){
 		esperar_conexion(socket_client);
-		int cliente = aceptar_cliente(socket_client);
-		atender_cliente(cliente);
 	}
 
-void esperar_conexion(int socket_client){
-	int cliente = aceptar_cliente(socket_client);
+void esperar_conexion(int socket_cliente){
+	int cliente = aceptar_cliente(socket_cliente);
 	log_info(logger,"Se conecto un cliente con el socket numero %d", cliente);
-// HASTA ACÁ ESTA ADAPTADO A NUESTRO CODIGO MAS O MENOS
-	//falta la implementacion de la funcion que va a hacer el hilo al conectarse sac-cli
-
 	pthread_t hilo_nuevo_cliente;
-	if(pthread_create(&hilo_nuevo_cliente,NULL,(void*)atender_cliente,(void*)cliente)!=0){
-		log_error(logger,"Error al crear el hilo de journal");
-		}
-
-	pthread_detach(hilo_nuevo_cliente);
-	// close(cliente);
-}
-
-
-
-
-
+		if(pthread_create(&hilo_nuevo_cliente,NULL,(void*)atender_cliente,(void*)cliente)!=0){
+			log_error(logger,"Error al crear el hilo de journal");
+			}
+		pthread_detach(hilo_nuevo_cliente);
+		//close(cliente);
+	}
 
 
 int aceptar_cliente(int servidor){
@@ -71,20 +65,18 @@ int aceptar_cliente(int servidor){
 }
 
 
+void atender_cliente(int socket_cliente){
 
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	recv(socket_cliente,&(paquete->codigo_operacion),sizeof(uint8_t),0);
 
+	recv(socket_cliente,&(paquete->buffer->size),sizeof(uint32_t),0);
+	recv(socket_cliente,&(paquete->buffer),sizeof(paquete->buffer->size),0);
 
-
-
-
-void recbir_mensaje(int socket_cliente){
-
-	op_code codigo_mensaje;
-	recv(socket_cliente,&codigo_mensaje,sizeof(codigo_mensaje),0);
-
-	switch(codigo_mensaje){
-		case 0: New_Pokemon mensaje_new = descerializar_new_pokemon(socket_cliente);
+	switch(paquete->codigo_operacion){
+		case 0: New_Pokemon* mensaje_new = descerializar_new_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_new)
+				free(mensaje_new);
 				break;
 
 		case 1: Localized_Pokemon mensaje_localized = descerializar_localized_pokemon(socket_cliente);
@@ -109,17 +101,35 @@ void recbir_mensaje(int socket_cliente){
 	}
 }
 
-/*void* descerializar_new_pokemon(int socket_cliente){
-	int new_pokemon_size;
-	recv(socket_cliente, &new_pokemon_size, sizeof(new_pokemon_size), 0);
-	int size_nombre;
-	recv(socket_cliente, &size_nombre, sizeof(size_nombre), 0);
-	char *nombre = malloc(size_nombre);
-	recv(socket_cliente, nombre, size_nombre, 0);
+
+// ----------------------------- Descerializadores (esa palabra si quiera existe?) ---------------------------------------
+
+// No hay una forma de usar un unico descerializar?
+// ASI NO SE DESCERIALIZA FLACO, MEMCPY
+
+void* descerializar_new_pokemon(t_buffer buffer){
+
+	New_Pokemon new_pokemon = malloc(sizeof(New_Pokemon));
+
+	void* stream = buffer->stream;
+
+	memcpy(&(new_pokemon->nombre->size_nombre),stream,sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	new_pokemon->nombre->nombre = malloc(new_pokemon->nombre->size_nombre);
+	memcpy(&(new_pokemon->nombre->nombre),stream,new_pokemon->nombre->size_nombre);
+	stream += new_pokemon->nombre->size_nombre;
+	memcpy(&(new_pokemon->posicion->posicion_X),stream,sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	memcpy(&(new_pokemon->posicion->posicion_Y),stream,sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+	memcpy(&(new_pokemon->cantidad),stream,sizeof(uint32_t));
+	stream += sizeof(uint32_t);
+
+	return new_pokemon;
+
+}
 
 
-
-}*/
 
 return EXIT_SUCCESS;
 
