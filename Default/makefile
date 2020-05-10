@@ -9,7 +9,7 @@ RM := rm
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include Team/src/subdir.mk
--include Team/Debug/src/subdir.mk
+-include Game\ Boy/src/subdir.mk
 -include Broker/src/subdir.mk
 -include subdir.mk
 -include objects.mk
@@ -25,19 +25,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: tp-2020-1c-CheckPoint
+all: Proceso\ Piloto
 
 # Tool invocations
-tp-2020-1c-CheckPoint: $(OBJS) $(USER_OBJS)
+Proceso\ Piloto: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc  -o "tp-2020-1c-CheckPoint" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc  -o "Proceso Piloto" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) tp-2020-1c-CheckPoint
+	-$(RM) $(EXECUTABLES)$(OBJS)$(C_DEPS) "Proceso Piloto"
 	-@echo ' '
 
 .PHONY: all clean dependents
