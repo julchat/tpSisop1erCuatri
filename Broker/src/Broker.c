@@ -14,7 +14,7 @@ char* puerto_broker;
 char* ip_broker;
 int socket_client;
 
-//Bloque memoria -> para los mensajes
+//Bloque memoria -> para los mensajes (malloquear lo que dice el config que nos dan)
 
 
 
@@ -74,40 +74,40 @@ void atender_cliente(int socket_cliente){
 	recv(socket_cliente,&(paquete->buffer),sizeof(paquete->buffer->size),0);
 
 	switch(paquete->codigo_operacion){
-		case 0: New_Pokemon* mensaje_new = descerializar_new_pokemon(paquete->buffer);
+		case 0: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_new)
 				free(mensaje_new);
 				break;
 
-		case 1: Localized_Pokemon mensaje_localized = descerializar_localized_pokemon(socket_cliente);
+		case 1: Localized_Pokemon mensaje_localized = deserializar_localized_pokemon(socket_cliente); //Falta hacer esta funcion con el tema de los vectores :C
 				//encolar(punterotanto,mensaje_localized)
 			    break;
 
-		case 2: Get_Pokemon mensaje_get = descerializar_get_pokemon(socket_cliente);
+		case 2: Get_Pokemon mensaje_get = deserializar_get_pokemon(socket_cliente);
 				//encolar(punterotanto,mensaje_get)
 				break;
 
-		case 3: Appeared_Pokemon mensaje_appeared = descerializar_appeared_pokemon(socket_cliente);
+		case 3: Appeared_Pokemon mensaje_appeared = deserializar_appeared_pokemon(socket_cliente);
 				//encolar(punterotanto,mensaje_appeared)
 				break;
 
-		case 4: Catch_Pokemon mensaje_catch = descerializar_catch_pokemon(socket_cliente);
+		case 4: Catch_Pokemon mensaje_catch = deserializar_catch_pokemon(socket_cliente);
 				//encolar(punterotanto,mensaje_catch)
 				break;
 
-		case 5: Caught_Pokemon mensaje_caught = descerializar_caught_pokemon(socket_cliente);
+		case 5: Caught_Pokemon mensaje_caught = deserializar_caught_pokemon(socket_cliente);
 				//encolar(punterotanto,mensaje_caught)
 				break;
 	}
 }
 
 
-// ----------------------------- Descerializadores (esa palabra si quiera existe?) ---------------------------------------
+// ----------------------------- Deserializadores (esa palabra si quiera existe?) ---------------------------------------
 
 // No hay una forma de usar un unico descerializar?
 // ASI NO SE DESCERIALIZA FLACO, MEMCPY
 
-void* descerializar_new_pokemon(t_buffer buffer){
+void* deserializar_new_pokemon(t_buffer buffer){
 
 	New_Pokemon new_pokemon = malloc(sizeof(New_Pokemon));
 
@@ -128,6 +128,73 @@ void* descerializar_new_pokemon(t_buffer buffer){
 	return new_pokemon;
 
 }
+
+ void* deserializar_get_pokemon(t_buffer buffer){
+
+	 Get_Pokemon get_pokemon = malloc(sizeof(Get_Pokemon));
+
+	 void* stream = buffer->stream;
+
+	 memcpy(&(get_pokemon->nombre->size_nombre),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+	 get_pokemon->nombre->nombre = malloc(get_pokemon->nombre->size_nombre);
+	 memcpy(&(get_pokemon->nombre->nombre),stream,get_pokemon->nombre->size_nombre);
+	 stream += get_pokemon->nombre->size_nombre;
+
+	 return get_pokemon;
+ }
+
+ void* deserializar_appeared_pokemon(t_buffer buffer){
+
+	 Appeared_Pokemon appeared_pokemon = malloc(sizeof(Appeared_Pokemon));
+
+	 void* stream = buffer->stream;
+
+	 memcpy(&(appeared_pokemon->nombre->size_nombre))
+	 stream += sizeof(uint32_t);
+	 appeared_pokemon->nombre->nombre = malloc(appeared_pokemon->nombre->size_nombre);
+	 memcpy(&(appeared_pokemon->nombre->nombre),stream,appeared_pokemon->nombre->size_nombre);
+	 stream += appeared_pokemon->nombre->size_nombre;
+	 memcpy(&(appeared_pokemon->posicion->posicion_X),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+	 memcpy(&(appeared_pokemon->posicion->posicion_Y),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+
+	 return appeared_pokemon;
+ }
+
+  void* deserializar_catch_pokemon(t_buffer buffer){
+
+	 Catch_Pokemon catch_pokemon = malloc(sizeof(Catch_Pokemon));
+
+	 void* stream = buffer->stream;
+
+	 memcpy(&(catch_pokemon->nombre->size_nombre))
+	 stream += sizeof(uint32_t);
+	 catch_pokemon->nombre->nombre = malloc(catch_pokemon->nombre->size_nombre);
+	 memcpy(&(catch_pokemon->nombre->nombre),stream,catch_pokemon->nombre->size_nombre);
+	 stream += catch_pokemon->nombre->size_nombre;
+	 memcpy(&(catch_pokemon->posicion->posicion_X),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+	 memcpy(&(catch_pokemon->posicion->posicion_Y),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+
+	 return catch_pokemon;
+
+  }
+
+  void* deserializar_caught_pokemon(t_buffer buffer){
+
+	  Caught_Pokemon caught_pokemon = malloc(sizeof(Caught_Pokemon));
+
+	  void* stream = buffer->stream;
+
+	 memcpy(&(caught_pokemon->valor),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+
+	 return caught_pokemon;
+
+  }
 
 
 
