@@ -45,8 +45,8 @@ trainer* crearYAsignarHilo(trainer* unEntrenador);
 
 void* buscarPokemones(void*);
 
-void asignarObjetivosGlobales(t_list*);
-
 t_list* armarEntrenadores(infoInicializacion configuracion);
+
+void asignarObjetivosGlobales(infoInicializacion);
 
 #endif /* TEAM_SRC_TEAM_H_ */

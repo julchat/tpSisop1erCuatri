@@ -203,3 +203,15 @@ void destruir_sublistas_y_sus_elementos(void* element){
 	 return existe;
  }
 
+ t_list* combinarListas(t_list* primeraLista, t_list* segundaLista){
+ int i = 0;
+ void* elemento;
+ while(list_get(segundaLista,i)!=NULL){
+ 	elemento = list_get(segundaLista,i);
+ 	list_add(primeraLista,elemento);
+ 	i++;
+ }
+ //destroy segundaLista?
+ return primeraLista;
+ }
+

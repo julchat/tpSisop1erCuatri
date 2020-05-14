@@ -26,20 +26,14 @@ int main(){
 	puerto = configuracion.puerto;
 	socket = crear_conexion(ip,puerto);
 	entrenadores = armarEntrenadores(configuracion);
-	asignarObjetivosGlobales(entrenadores);
-	}
+	asignarObjetivosGlobales(configuracion);
 	return 0;
 
 }
 
 
-
 void* buscarPokemones(void* entrenador){
 return entrenador;
-}
-
-void asignarObjetivosGlobales(t_list* entrenadores){
-
 }
 
 t_list* armarEntrenadores(infoInicializacion configuracion){
@@ -78,9 +72,11 @@ trainer* crearYAsignarHilo(trainer* unEntrenador){
 }
 
 void asignarObjetivosGlobales(infoInicializacion configuracion){
+	t_list* (*punteroACombinarListas)(void*,void*);
+	punteroACombinarListas = &combinarListas;
+	t_list* objetivos = configuracion.objetivos;
+	objetivos = list_fold(objetivos,NULL,punteroACombinarListas);
 
 }
 
-t_list* aplanarLista(t_list* primeraLista, t_list* segundaLista){
 
-}
