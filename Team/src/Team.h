@@ -13,9 +13,19 @@ typedef struct{
 	int posicion_Y;
 }t_posicion;
 
+typedef enum{
+	NEW,
+	READY,
+	EXEC,
+	BLOCKED,
+	TERM,
+}estado;
+
+
 typedef struct
 {
 	int identificador;
+	estado estadoActual;
 	pthread_t* hilo;
 	t_list* objetivos;
 	t_list* poseidos;
@@ -33,11 +43,14 @@ typedef struct
 	int retardo;
 	char* algoritmo;
 	int quantum;
+	int alpha;
 	int estim;
 	char* ip;
 	char* puerto;
 	char* logpath;
 } infoInicializacion;
+
+int planificar(t_list*,t_log*,t_log*,infoInicializacion);
 
 t_list* armarEntrenadores(infoInicializacion);
 

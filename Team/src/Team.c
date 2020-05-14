@@ -11,7 +11,6 @@ t_list* objetivosGlobales;
 
 int main(){
 	objetivosGlobales = list_create();
-	t_list* hilosentrenadores = list_create();
 	FILE* configfile;
 	t_list* entrenadores = list_create();
 	char* ip;
@@ -27,10 +26,22 @@ int main(){
 	socket = crear_conexion(ip,puerto);
 	entrenadores = armarEntrenadores(configuracion);
 	asignarObjetivosGlobales(configuracion);
+	t_log* loggerTeam;
+	t_log* loggerErrores;
+	t_log_level level = LOG_LEVEL_INFO;
+	t_log_level levelErrores = LOG_LEVEL_WARNING;
+	loggerTeam = iniciar_logger_de_nivel_minimo(level, configuracion.logpath);
+	loggerErrores = iniciar_logger_de_nivel_minimo(levelErrores,"/tp-2020-1c-CheckPoint/Team/src/loggersErroresPrueba.txt");
+	int resultadoExec = planificar(entrenadores,loggerTeam,loggerErrores, configuracion);
+	if(resultadoExec==0){
+		return -4;
+	}
 	return 0;
-
 }
 
+int planificar(t_list* entrenadores, t_log* loggerPosta, t_log* loggerPrueba, infoInicializacion configuracion){
+	return 1;
+}
 
 void* buscarPokemones(void* entrenador){
 return entrenador;
@@ -58,6 +69,7 @@ t_list* armarEntrenadores(infoInicializacion configuracion){
 		unEntrenador->objetivos = list_get(objetivosTodos,i);
 		unEntrenador->poseidos = list_get(poseidosTodos,i);
 		unEntrenador = crearYAsignarHilo(unEntrenador);
+		unEntrenador->estadoActual = NEW;
 		list_add(entrenadores,unEntrenador);
 	}
 	return entrenadores;
@@ -72,7 +84,7 @@ trainer* crearYAsignarHilo(trainer* unEntrenador){
 }
 
 void asignarObjetivosGlobales(infoInicializacion configuracion){
-	t_list* (*punteroACombinarListas)(void*,void*);
+	t_list* (*punteroACombinarListas)(t_list*,t_list*);
 	punteroACombinarListas = &combinarListas;
 	t_list* objetivos = configuracion.objetivos;
 	objetivos = list_fold(objetivos,NULL,punteroACombinarListas);
