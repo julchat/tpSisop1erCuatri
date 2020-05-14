@@ -15,5 +15,6 @@ C_DEPS :=
 SUBDIRS := \
 Broker/src \
 Game\ Boy/src \
+Team/Debug/src \
 Team/src \
 

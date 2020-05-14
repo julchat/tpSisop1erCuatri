@@ -14,11 +14,13 @@
 #include <pthread.h>
 #include "libbase.h"
 
-entrenador crearEntrenador();
+trainer crearEntrenador();
 void agregarCaracter(char** buffer, char c);
 void inicializarListas(infoInicializacion*);
 infoInicializacion obtenerConfiguracion(FILE* configfile);
 char* vaciarBuffer (char* bufferViejo);
 void liberarBuffer (void* buffer);
+void destruir_sublistas_y_sus_elementos(void* element);
 
+bool existeDichoEntrenador(int indice, t_list* obj, t_list* pos, t_list* posX, t_list* posY);
 #endif /* TEAM_SRC_UTILS_H_ */

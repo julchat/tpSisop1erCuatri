@@ -24,10 +24,10 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 	t_list* poseidos = list_create();
 	t_list* posicionesX = list_create();
 	t_list* posicionesY = list_create();
-	void (*punteroAFuncion)();
-	punteroAFuncion = &free;
-	void (*punteroAFuncion2)(t_list*,void(*element_destroyer)(void*));
-	punteroAFuncion2 = &list_destroy_and_destroy_elements;
+	void (*punteroAFree)(void*);
+	punteroAFree = &free;
+	void (*punteroADestruirListaYSublistas)(void*);
+	punteroADestruirListaYSublistas = &(destruir_sublistas_y_sus_elementos);
 	char c= '\0';
 
 	// PRIMERA LÍNEA
@@ -70,7 +70,7 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 		buffer = vaciarBuffer(buffer);
 		}
 		list_add(poseidos, pokemonesPoseidos);
-		list_destroy_and_destroy_elements(pokemonesPoseidos,punteroAFuncion);
+		list_destroy_and_destroy_elements(pokemonesPoseidos,punteroAFree);
 		pokemonesPoseidos = list_create();
 	}
 
@@ -91,7 +91,7 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 			buffer = vaciarBuffer(buffer);
 			}
 			list_add(objetivos, pokemonesObjetivos);
-			list_destroy_and_destroy_elements(pokemonesObjetivos,punteroAFuncion);
+			list_destroy_and_destroy_elements(pokemonesObjetivos,punteroAFree);
 			pokemonesObjetivos = list_create();
 		}
 
@@ -161,8 +161,8 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 	list_destroy(pokemonesPoseidos); // por eso no uso la otra destroy
 	list_destroy(posicionesX);
 	list_destroy(posicionesY);
-	list_destroy_and_destroy_elements(poseidos,punteroAFuncion2(,punteroAFuncion);
-	list_destroy_and_destroy_elements(objetivos,punteroAFuncion2(,punteroAFuncion));
+	list_destroy_and_destroy_elements(poseidos,punteroADestruirListaYSublistas);
+	list_destroy_and_destroy_elements(objetivos,punteroADestruirListaYSublistas);
 	return config;
 }
 
@@ -190,4 +190,16 @@ char* vaciarBuffer (char* bufferViejo){
 	*bufferNuevo = '\0';
 	return bufferNuevo;
 }
+
+void destruir_sublistas_y_sus_elementos(void* element){
+	list_destroy_and_destroy_elements(element,free);
+}
+
+
+
+ bool existeDichoEntrenador(int indice, t_list* obj, t_list* pos, t_list* posX, t_list* posY){
+	 bool existe;
+	 existe = (list_get(obj,indice)!=NULL)&&(list_get(pos,indice)!=NULL)&&(list_get(posX,indice)!=NULL)&&(list_get(posY,indice)!=NULL);
+	 return existe;
+ }
 
