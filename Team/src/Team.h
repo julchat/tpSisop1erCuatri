@@ -19,13 +19,18 @@ typedef enum{
 	EXEC,
 	BLOCKED,
 	TERM,
-}estado;
+}nombreEstado;
 
+typedef struct{
+	nombreEstado tipo;
+	t_list* entrenadores;
+	int cantHilos;
+}Estado;
 
 typedef struct
 {
 	int identificador;
-	estado estadoActual;
+	nombreEstado estadoActual;
 	pthread_t* hilo;
 	t_list* objetivos;
 	t_list* poseidos;
@@ -49,6 +54,11 @@ typedef struct
 	char* puerto;
 	char* logpath;
 } infoInicializacion;
+
+typedef struct{
+	infoInicializacion configuracion;
+	t_log* logger;
+}GodStruct;
 
 int planificar(t_list*,t_log*,t_log*,infoInicializacion);
 

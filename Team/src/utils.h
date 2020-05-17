@@ -16,7 +16,7 @@
 
 trainer crearEntrenador();
 void agregarCaracter(char** buffer, char c);
-void inicializarListas(infoInicializacion*);
+void inicializarListas(infoInicializacion*, Estado*, Estado*, Estado*, Estado*, Estado*);
 infoInicializacion obtenerConfiguracion(FILE* configfile);
 char* vaciarBuffer (char* bufferViejo);
 void liberarBuffer (void* buffer);

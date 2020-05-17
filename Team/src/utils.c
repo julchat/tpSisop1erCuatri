@@ -166,11 +166,21 @@ infoInicializacion obtenerConfiguracion(FILE* configfile){
 	return config;
 }
 
-void inicializarListas(infoInicializacion* configuracion){
+void inicializarListas(infoInicializacion* configuracion, Estado* n, Estado* r, Estado* e, Estado* b, Estado* t){
 	configuracion->objetivos = list_create();
 	configuracion->posicionesX = list_create();
 	configuracion->posicionesY = list_create();
 	configuracion->poseidos = list_create();
+	n->entrenadores = list_create();
+	r->entrenadores = list_create();
+	e->entrenadores = list_create();
+	b->entrenadores = list_create();
+	t->entrenadores = list_create();
+	n->cantHilos=0;
+	r->cantHilos=0;
+	e->cantHilos= 0;
+	b->cantHilos = 0;
+	t->cantHilos = 0;
 }
 
 

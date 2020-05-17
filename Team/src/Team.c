@@ -6,45 +6,48 @@
 #include "libbase.h"
 #include "utils.c"
 #include "utils.h"
+#include "semaphore.h"
 t_list* objetivosGlobales;
-
-
+Estado new;
+Estado ready;
+Estado exec;
+Estado blocked;
+Estado term;
+bool modoDeadlock = 0;
+GodStruct* info;
+t_list* entrenadores;
 int main(){
+	new.tipo = NEW;
+	ready.tipo = READY;
+	exec.tipo = EXEC;
+	blocked.tipo = BLOCKED;
+	term.tipo = TERM;
 	objetivosGlobales = list_create();
 	FILE* configfile;
-	t_list* entrenadores = list_create();
+	entrenadores = list_create();
+	pthread_t planificador;
 	char* ip;
 	char* puerto;
 	int socket;
+	t_log* loggerTeam;
+
 	configfile = fopen("configFile.txt","r");
 	infoInicializacion configuracion;
-	inicializarListas(&configuracion);
+	inicializarListas(&configuracion,&new,&ready,&exec,&blocked,&term);
 	configuracion = obtenerConfiguracion(configfile);
 	fclose(configfile);
 	ip = configuracion.ip;
 	puerto = configuracion.puerto;
 	socket = crear_conexion(ip,puerto);
-	entrenadores = armarEntrenadores(configuracion);
+	loggerTeam = iniciar_logger_de_nivel_minimo(LOG_LEVEL_INFO, configuracion.logpath);
 	asignarObjetivosGlobales(configuracion);
-	t_log* loggerTeam;
-	t_log* loggerErrores;
-	t_log_level level = LOG_LEVEL_INFO;
-	t_log_level levelErrores = LOG_LEVEL_WARNING;
-	loggerTeam = iniciar_logger_de_nivel_minimo(level, configuracion.logpath);
-	loggerErrores = iniciar_logger_de_nivel_minimo(levelErrores,"/tp-2020-1c-CheckPoint/Team/src/loggersErroresPrueba.txt");
-	int resultadoExec = planificar(entrenadores,loggerTeam,loggerErrores, configuracion);
-	if(resultadoExec==0){
-		return -4;
-	}
-	return 0;
+	info->logger = loggerTeam;
+	entrenadores = armarEntrenadores(configuracion);
+	info->configuracion.entrenadores = entrenadores;
+	configuracion.entrenadores = entrenadores;
 }
+void buscarPokemones(int* id){
 
-int planificar(t_list* entrenadores, t_log* loggerPosta, t_log* loggerPrueba, infoInicializacion configuracion){
-	return 1;
-}
-
-void* buscarPokemones(void* entrenador){
-return entrenador;
 }
 
 t_list* armarEntrenadores(infoInicializacion configuracion){
@@ -68,18 +71,22 @@ t_list* armarEntrenadores(infoInicializacion configuracion){
 		unEntrenador->posicion = *unaPosicion;
 		unEntrenador->objetivos = list_get(objetivosTodos,i);
 		unEntrenador->poseidos = list_get(poseidosTodos,i);
-		unEntrenador = crearYAsignarHilo(unEntrenador);
-		unEntrenador->estadoActual = NEW;
+		unEntrenador = crearYAsignarHilo(unEntrenador,i);
 		list_add(entrenadores,unEntrenador);
 	}
-	return entrenadores;
+		return entrenadores;
 
 }
 
-trainer* crearYAsignarHilo(trainer* unEntrenador){
+trainer* crearYAsignarHilo(trainer* unEntrenador,i){
+	int* id;
+	*id = i;
 	pthread_t hiloEntrenador;
-	pthread_create(&hiloEntrenador,NULL,buscarPokemones,unEntrenador);
+	pthread_create(&hiloEntrenador,NULL,buscarPokemones,id);
 	unEntrenador->hilo = &hiloEntrenador;
+	unEntrenador->estadoActual = NEW;
+	list_add(new.entrenadores,unEntrenador);
+	new.cantHilos++;
 	return unEntrenador;
 }
 
@@ -91,4 +98,15 @@ void asignarObjetivosGlobales(infoInicializacion configuracion){
 
 }
 
-
+trainer decidirFIFO(){
+	trainer* aEjecutar;
+ t_list* entrenadores = ready.entrenadores;
+ if(ready.cantHilos !=0){
+	 aEjecutar = list_get(entrenadores,0);
+	 return *aEjecutar;
+ }
+ else{
+	 printf("no hay entrenadores para decidir cual ejecuta");
+	 exit(-50);
+ }
+}
