@@ -20,7 +20,20 @@
 typedef enum
 {
 	MENSAJE = 1,
-}op_code;
+	/* NEW_POKEMON = 2;
+	 * LOCALIZED_POKEMON 3;
+	 * GET_POKEMON = 4;
+	 * APPEARED_POKEMON = 5;
+	 * CATCH_POKEMON = 6;
+	 * COUGHT_POKEMON = 7;
+	 * SUSCRIBER_NEW_POKEMON = 8;
+	 * SUSCRIBER_LOCALIZED_POKEMON = 9;
+	 * SUSCRIBER_GET_POKEMON = 10;
+	 * SUSCRIBER_APPEARED_POKEMON = 11;
+	 * SUSCRIBER_CATCH_POKEMON = 12;
+	 * SUSCRIBER_COUGTH_POKEMON = 13;
+	 */
+}op_code; //IDENTIFICADORES DE CADA TIPO DE MENSAJE
 
 typedef struct
 {
@@ -197,5 +210,61 @@ typedef struct{
 	uint32_t valor;
 
 }Caught_Pokemon;
+
+//--------------------------------------------------Estructuras de suscribers y listas de suscribers---------------------------------------
+
+typedef struct{
+	int id_suscriptor;
+	//hay que ver como hacer para añadirlo a la lista de suscriber que debe ir
+}Suscriber;
+
+typedef struct{
+	Suscriber un_suscriptor;
+	Suscribers_New_Pokemon* siguiente_suscriptor;
+
+}Suscribers_New_Pokemon;
+
+typedef struct{
+	Suscriber un_suscriptor;
+	Suscribers_Localized_Pokemon* siguiente_suscriptor;
+
+}Suscribers_Localized_Pokemon;
+
+typedef struct{
+	Suscriber un_suscriptor;
+	Suscribers_Get_Pokemon* siguiente_suscriptor;
+
+}Suscribers_Get_Pokemon;
+
+
+typedef struct{
+	Suscriber un_suscriptor;
+	Suscribers_Appeared_Pokemon* siguiente_suscriptor;
+
+}Suscribers_Appeared_Pokemon;
+
+typedef struct{
+	Suscriber un_suscriptor;
+	Suscribers_Catch_Pokemon* siguiente_suscriptor;
+
+}Suscribers_Catch_Pokemon;
+
+typedef struct{
+	Suscriber un_suscriptor;
+	Suscribers_Caught_Pokemon* siguiente_suscriptor;
+
+}Suscribers_Caught_Pokemon;
+
+//--------------------------------------------------Estructuras del Broker------------------------------------------
+//son las estructuras que se van a guardar en el broker (cachear)
+
+typedef struct{
+	int id_unico_mensaje; //tiene que ser UNICO
+	//falta meter el mensaje (sin el opcode)
+	suscriptores_mensaje_eviado* un_suscriptor;
+	suscriptores_respondieron_ACK* un_suscriptor;
+
+}administrador_mensajes;
+
 
 #endif

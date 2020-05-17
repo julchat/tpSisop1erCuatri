@@ -79,23 +79,23 @@ void atender_cliente(int socket_cliente){
 				free(mensaje_new);
 				break;
 
-		case 1: Localized_Pokemon mensaje_localized = deserializar_localized_pokemon(socket_cliente); //Falta hacer esta funcion con el tema de los vectores :C
+		case 1: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer); //Falta hacer esta funcion con el tema de los vectores :C
 				//encolar(punterotanto,mensaje_localized)
 			    break;
 
-		case 2: Get_Pokemon mensaje_get = deserializar_get_pokemon(socket_cliente);
+		case 2: Get_Pokemon* mensaje_get = deserializar_get_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_get)
 				break;
 
-		case 3: Appeared_Pokemon mensaje_appeared = deserializar_appeared_pokemon(socket_cliente);
+		case 3: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_appeared)
 				break;
 
-		case 4: Catch_Pokemon mensaje_catch = deserializar_catch_pokemon(socket_cliente);
+		case 4: Catch_Pokemon* mensaje_catch = deserializar_catch_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_catch)
 				break;
 
-		case 5: Caught_Pokemon mensaje_caught = deserializar_caught_pokemon(socket_cliente);
+		case 5: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_caught)
 				break;
 	}
@@ -195,7 +195,15 @@ void* deserializar_new_pokemon(t_buffer buffer){
 	 return caught_pokemon;
 
   }
+//falta deserializar localized
 
+//----------------------------------------------Manejo de Suscripciones------------------------------------------
+  /*void**/
+  //revisar como hacer llegar la info hasta acá
+  int suscripcion_New_Pokemon(int socket_cliente){
+	  Suscriptor un_suscriptor = malloc(sizeof(Suscriptor));
+	  //hay que generar un ID random, dárselo al cliente y guardarlo en la estructura para dps agregarlo a lista
+  }
 
 
 return EXIT_SUCCESS;
