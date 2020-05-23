@@ -64,9 +64,9 @@ int planificar(t_list*,t_log*,t_log*,infoInicializacion);
 
 t_list* armarEntrenadores(infoInicializacion);
 
-trainer* crearYAsignarHilo(trainer* unEntrenador);
+trainer* crearYAsignarHilo(trainer* , int);
 
-void* buscarPokemones(void*);
+void buscarPokemones(int*);
 
 t_list* armarEntrenadores(infoInicializacion configuracion);
 

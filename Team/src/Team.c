@@ -4,9 +4,9 @@
 #include "Team.h"
 #include <pthread.h>
 #include "libbase.h"
-#include "utils.c"
 #include "utils.h"
 #include "semaphore.h"
+#include "commons/collections/list.h"
 t_list* objetivosGlobales;
 Estado new;
 Estado ready;
@@ -25,7 +25,6 @@ int main(){
 	objetivosGlobales = list_create();
 	FILE* configfile;
 	entrenadores = list_create();
-	pthread_t planificador;
 	char* ip;
 	char* puerto;
 	int socket;
@@ -46,9 +45,65 @@ int main(){
 	info->configuracion.entrenadores = entrenadores;
 	configuracion.entrenadores = entrenadores;
 }
-void buscarPokemones(int* id){
 
+void buscarPokemones(int* id){
+	infoInicializacion configuracion = info->configuracion;
+	trainer yo = list_get(info->configuracion.entrenadores,*id);
+	Estado estadoActual = yo.estadoActual;
+	t_list* misPokemones = yo.poseidos;
+	t_list* misObjetivos = yo.objetivos;
+	int cantMax = misObjetivos->elements_count;
+	int cantActual = misPokemones->elements_count;
+	char* unPokemon;
+
+	Estado estadoAnterior;
+	bool soyLibre;
+	bool estoyEnDeadlock = 0;
+	wait(mandarGet);
+	while(noTermine()){
+    if(!modoDeadlock){
+    	wait(esteEsMio);
+    	if(configuracion.algoritmo=="FIFO"||"SJFSD"){
+    		if(!estoyEnDeadlock){
+    			switch(estadoActual){
+    				case NEW:
+    					estadoActual = READY;
+    					estadoAnterior = NEW;
+    					break;
+    				case BLOCKED:
+    					estadoActual = READY;
+    					estadoAnterior = BLOCKED;
+    					break;
+    			}
+    			wait(miTurno);
+    			estadoActual = EXEC;
+    			estadoAnterior = READY;
+    			meMuevo();
+    			intentoCapturar();
+    			estadoActual = BLOCKED;
+    			estadoAnterior = EXEC;
+    			replanifico(); // SIGNAL
+    			wait(mensajecaught);
+    				if(verificarCatch()){
+    					unPokemon = obtenerPokemon();
+    					list_add(misPokemones,unPokemon);
+    						if(cantActual == cantMax){
+    						if(tengoLosQueNecesito()){
+    							estadoActual = TERM;
+    							estadoAnterior = BLOCKED;
+    							desalojoMisRecursos();
+    						}else{
+    							estoyEnDeadlock = 1;
+    					}
+    				}
+    			}
+    		}
+    	}
+    }
 }
+}
+
+
 
 t_list* armarEntrenadores(infoInicializacion configuracion){
 	t_list* entrenadores = list_create();
@@ -78,7 +133,7 @@ t_list* armarEntrenadores(infoInicializacion configuracion){
 
 }
 
-trainer* crearYAsignarHilo(trainer* unEntrenador,i){
+trainer* crearYAsignarHilo(trainer* unEntrenador,int i){
 	int* id;
 	*id = i;
 	pthread_t hiloEntrenador;
@@ -110,3 +165,4 @@ trainer decidirFIFO(){
 	 exit(-50);
  }
 }
+
