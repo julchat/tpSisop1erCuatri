@@ -162,6 +162,43 @@ char* recibir_mensaje(int socket_cliente){
 	recv(socket_cliente, buffer, buffer_size, 0);
 	return buffer;
 }
+//--------------------------------------------------Colas de Mensajes------------------------------------
+
+typedef struct{
+	New_Pokemon mensaje;
+	cola_new_pokemon *head;
+	cola_new_pokemon *tail;
+}cola_new_pokemon;
+
+typedef struct{
+	Localized_Pokemon mensaje;
+	cola_localized_pokemon *head;
+	cola_localized_pokemon *tail;
+}cola_localized_pokemon;
+
+typedef struct{
+	Get_Pokemon mensaje;
+	cola_get_pokemon *head;
+	cola_get_pokemon *tail;
+}cola_get_pokemon;
+
+typedef struct{
+	Appeared_Pokemon mensaje;
+	cola_appeared_pokemon *head;
+	cola_appeared_pokemon *tail;
+}cola_appeared_pokemon;
+
+typedef struct{
+	Catch_Pokemon mensaje;
+	cola_catch_pokemon *head;
+	cola_catch_pokemon *tail;
+}cola_catch_pokemon;
+
+typedef struct{
+	Caught_Pokemon mensaje;
+	cola_caught_pokemon *head;
+	cola_caught_pokemon *tail;
+}cola_caught_pokemon;
 
 
 //--------------------------------------------------Estructuras de mensajes------------------------------
@@ -264,6 +301,11 @@ typedef struct{
 	suscriptores_mensaje_eviado* un_suscriptor;
 	suscriptores_respondieron_ACK* un_suscriptor;
 
+}info_mensaje;
+
+typedef struct{
+	info_mensaje un_mensaje;
+	administrador_mensajes* siguiente_info;
 }administrador_mensajes;
 
 

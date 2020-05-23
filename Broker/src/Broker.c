@@ -74,28 +74,28 @@ void atender_cliente(int socket_cliente){
 	recv(socket_cliente,&(paquete->buffer),sizeof(paquete->buffer->size),0);
 
 	switch(paquete->codigo_operacion){
-		case 0: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
+		case 2: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_new)
 				free(mensaje_new);
 				break;
 
-		case 1: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer); //Falta hacer esta funcion con el tema de los vectores :C
+		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer); //Falta hacer esta funcion con el tema de los vectores :C
 				//encolar(punterotanto,mensaje_localized)
 			    break;
 
-		case 2: Get_Pokemon* mensaje_get = deserializar_get_pokemon(paquete->buffer);
+		case 4: Get_Pokemon* mensaje_get = deserializar_get_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_get)
 				break;
 
-		case 3: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
+		case 5: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_appeared)
 				break;
 
-		case 4: Catch_Pokemon* mensaje_catch = deserializar_catch_pokemon(paquete->buffer);
+		case 6: Catch_Pokemon* mensaje_catch = deserializar_catch_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_catch)
 				break;
 
-		case 5: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
+		case 7: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
 				//encolar(punterotanto,mensaje_caught)
 				break;
 	}
