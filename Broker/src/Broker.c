@@ -14,20 +14,23 @@ char* puerto_broker;
 char* ip_broker;
 int socket_client;
 
+administrador_mensajes* cola_mensajes = NULL;
+int id_unico = 0; // ojo con esto, ¡¡¡¡capaz!!! hay que sincronizarlo, lo vamos a usar como un contador
+
 //Bloque memoria -> para los mensajes (malloquear lo que dice el config que nos dan)
 
 
 
-
+/* HAY QUE LEVANTAR UNA CONFIG, NO SETEARLA!
 config = leer_config("/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker"); //Esto solo va a funcionar en la compu de juan
-//config_set_value(config,"TAMANO_MEMORIA",aca va el valor del tamaño [Numerico]);
-//config_set_value(config,"TAMANO_MINIMO_PARTICION",aca va el valor del tamaño minimo de particion[Numerico]);
-//config_set_value(config,"ALGORITMO_MEMORIA",aca va el valor del algoritmo de memoria[String]);
-//config_set_value(config,"ALGORITMO_REEMPLAZO",aca va el valor del algoritmo de reemplazo[String]);
-//config_set_value(config,"ALGORITMO_PARTICION_LIBRE",aca va el valor del algoritmo de particion libre[String]);
+config_set_value(config,"TAMANO_MEMORIA",aca va el valor del tamaño [Numerico]);
+config_set_value(config,"TAMANO_MINIMO_PARTICION",aca va el valor del tamaño minimo de particion[Numerico]);
+config_set_value(config,"ALGORITMO_MEMORIA",aca va el valor del algoritmo de memoria[String]);
+config_set_value(config,"ALGORITMO_REEMPLAZO",aca va el valor del algoritmo de reemplazo[String]);
+config_set_value(config,"ALGORITMO_PARTICION_LIBRE",aca va el valor del algoritmo de particion libre[String]);
 config_set_value(config,"IP_BROKER","127.0.0.1");
 config_set_value(config,"PUERTO_BROKER",6009);
-//config_set_value(config,"FRECUENCIA_COMPACTACION",aca va el valor de la frecuencia de compactacion[Numerico]);
+config_set_value(config,"FRECUENCIA_COMPACTACION",aca va el valor de la frecuencia de compactacion[Numerico]);
 config_set_value(config,"LOG_FILE","/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker");
 
 
@@ -36,9 +39,13 @@ puerto_broker = config_get_string_value(config,"PUERTO_BROKER");
 ip_broker = config_get_string_value(config,"IP_BROKER");
 
 logger = iniciar_logger_de_nivel_minimo(LOG_LEVEL_ERROR,"/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker");
+*/
+
+// -------------------------------------------- Punteros a las listas ----------------------------------------------
 
 
-socket_client = crear_conexion(ip_broker,puerto_broker);
+
+//socket_client = crear_conexion(ip_broker,puerto_broker); esto tambien se levanta desde la config creo
 
 	while(1){
 		esperar_conexion(socket_client);
@@ -73,34 +80,36 @@ void atender_cliente(int socket_cliente){
 	recv(socket_cliente,&(paquete->buffer->size),sizeof(uint32_t),0);
 	recv(socket_cliente,&(paquete->buffer),sizeof(paquete->buffer->size),0);
 
+
+
 	switch(paquete->codigo_operacion){
 		case 2: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
-				//encolar(punterotanto,mensaje_new)
+				enlistar_mensaje(cola_mensajes,mensaje_new);
 				free(mensaje_new);
 				break;
 
 		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer); //Falta hacer esta funcion con el tema de los vectores :C
-				//encolar(punterotanto,mensaje_localized)
+				enlistar_mensaje(cola_mensajes,mensaje_localized);
 				free(mensaje_localized);
 			    break;
 
 		case 4: Get_Pokemon* mensaje_get = deserializar_get_pokemon(paquete->buffer);
-				//encolar(punterotanto,mensaje_get)
+				enlistar_mensaje(cola_mensajes,mensaje_get);
 				free(mensaje_get);
 				break;
 
 		case 5: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
-				//encolar(punterotanto,mensaje_appeared)
+				enlistar_mensaje(cola_mensajes,mensaje_appeared);
 				free(mensaje_appeared);
 				break;
 
 		case 6: Catch_Pokemon* mensaje_catch = deserializar_catch_pokemon(paquete->buffer);
-				//encolar(punterotanto,mensaje_catch)
+				enlistar_mensaje(cola_mensajes,mensaje_catch);
 				free(mensaje_catch);
 				break;
 
 		case 7: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
-				//encolar(punterotanto,mensaje_caught)
+				enlistar_mensaje(cola_mensajes,mensaje_caught);
 				free(mensaje_caught);
 				break;
 	}
@@ -109,8 +118,7 @@ void atender_cliente(int socket_cliente){
 
 // ----------------------------- Deserializadores (esa palabra si quiera existe?) ---------------------------------------
 
-// No hay una forma de usar un unico descerializar?
-// ASI NO SE DESCERIALIZA FLACO, MEMCPY
+// Vamos a tener que luego pasar estas funciones a la libreria para que las usen los otros modulos
 
 void* deserializar_new_pokemon(t_buffer buffer){
 
@@ -155,7 +163,7 @@ void* deserializar_new_pokemon(t_buffer buffer){
 
 	 void* stream = buffer->stream;
 
-	 memcpy(&(appeared_pokemon->nombre->size_nombre))
+	 memcpy(&(appeared_pokemon->nombre->size_nombre));
 	 stream += sizeof(uint32_t);
 	 appeared_pokemon->nombre->nombre = malloc(appeared_pokemon->nombre->size_nombre);
 	 memcpy(&(appeared_pokemon->nombre->nombre),stream,appeared_pokemon->nombre->size_nombre);
@@ -174,7 +182,7 @@ void* deserializar_new_pokemon(t_buffer buffer){
 
 	 void* stream = buffer->stream;
 
-	 memcpy(&(catch_pokemon->nombre->size_nombre))
+	 memcpy(&(catch_pokemon->nombre->size_nombre));
 	 stream += sizeof(uint32_t);
 	 catch_pokemon->nombre->nombre = malloc(catch_pokemon->nombre->size_nombre);
 	 memcpy(&(catch_pokemon->nombre->nombre),stream,catch_pokemon->nombre->size_nombre);
@@ -200,13 +208,39 @@ void* deserializar_new_pokemon(t_buffer buffer){
 	 return caught_pokemon;
 
   }
-//falta deserializar localized
+
+//Falta deserializar localized
+
+//----------------------------------------------Enlistador(?)-----------------------------------------------------
+
+  /* Se encarga de meter los mensajes (la estructura administrador_mensaje) a la lista, tambien es el que
+   * genera y setea los id_unico de cada mensaje
+   * Tendrian que ser una cola? estoy un poco perdido en esto, esto como son los generales estan bien como listas?
+   */
+
+  void enlistar_mensaje(administrador_mensajes *p,void* unMensaje){ //agrega los nodos al final de la lista
+	  administrador_mensajes nuevo;
+	  nuevo->un_mensaje->mensaje = unMensaje;
+	  nuevo->un_mensaje->id_unico_mensaje = id_unico; // la variable global
+	  id_unico++;
+	  nuevo->siguiente_info = NULL;
+	  if (p == NULL) {
+		  p = nuevo;
+	  }
+	  else {
+		  administrador_mensajes auxiliar = p;
+		  while (auxiliar->siguiente_info != NULL){
+			  auxiliar = auxiliar->siguiente_info;
+		  }
+		  auxiliar->siguiente_info = nuevo;
+	  }
+  }
 
 //----------------------------------------------Manejo de Suscripciones------------------------------------------
   /*void**/
   //revisar como hacer llegar la info hasta acá
   int suscripcion_New_Pokemon(int socket_cliente){
-	  Suscriptor un_suscriptor = malloc(sizeof(Suscriptor));
+	  Suscriber un_suscriptor = malloc(sizeof(Suscriber));
 	  //hay que generar un ID random, dárselo al cliente y guardarlo en la estructura para dps agregarlo a lista
   }
 

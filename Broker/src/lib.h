@@ -297,15 +297,16 @@ typedef struct{
 
 typedef struct{
 	int id_unico_mensaje; //tiene que ser UNICO
-	//falta meter el mensaje (sin el opcode)
-	suscriptores_mensaje_eviado* un_suscriptor;
-	suscriptores_respondieron_ACK* un_suscriptor;
+	void *mensaje; // <------ Mensaje sin el op_code, lo cargamos desde "atender_cliente"
+	//suscriptores_mensaje_eviado* un_suscriptor;
+	//suscriptores_respondieron_ACK* un_suscriptor;
 
 }info_mensaje;
 
 typedef struct{
 	info_mensaje un_mensaje;
 	administrador_mensajes* siguiente_info;
+
 }administrador_mensajes;
 
 
