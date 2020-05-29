@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "semaphore.h"
 #include "commons/collections/list.h"
+#include <string.h>
 t_list* objetivosGlobales;
 Estado new;
 Estado ready;
@@ -16,6 +17,7 @@ Estado term;
 bool modoDeadlock = 0;
 GodStruct* info;
 t_list* entrenadores;
+pthread_t hiloGets;
 int main(){
 	new.tipo = NEW;
 	ready.tipo = READY;
@@ -25,26 +27,41 @@ int main(){
 	objetivosGlobales = list_create();
 	FILE* configfile;
 	entrenadores = list_create();
-	char* ip;
-	char* puerto;
-	int socket;
 	t_log* loggerTeam;
-
 	configfile = fopen("configFile.txt","r");
 	infoInicializacion configuracion;
 	inicializarListas(&configuracion,&new,&ready,&exec,&blocked,&term);
 	configuracion = obtenerConfiguracion(configfile);
 	fclose(configfile);
-	ip = configuracion.ip;
-	puerto = configuracion.puerto;
-	socket = crear_conexion(ip,puerto);
+	pthread_create(&hiloGets,NULL,mandarGets,NULL);
 	loggerTeam = iniciar_logger_de_nivel_minimo(LOG_LEVEL_INFO, configuracion.logpath);
 	asignarObjetivosGlobales(configuracion);
 	info->logger = loggerTeam;
+	info->configuracion = configuracion;
 	entrenadores = armarEntrenadores(configuracion);
 	info->configuracion.entrenadores = entrenadores;
 	configuracion.entrenadores = entrenadores;
+	limpiarObjetivosCumplidos();
 }
+
+void limpiarObjetivosCumplidos(){
+	char* unPokemon;
+	char* pokemonObjetivo;
+	t_list* (*punteroACombinarListas)(t_list*,t_list*);
+	punteroACombinarListas = &combinarListas;
+	t_list* poseidos = info->configuracion.poseidos;
+	poseidos = list_fold(poseidos,NULL,punteroACombinarListas);
+	for(int i=0; i<poseidos->elements_count;i++){
+		unPokemon = list_get(poseidos,i);
+		pokemonObjetivo = list_find(objetivosGlobales,unPokemon);
+
+	}
+}
+
+void mandarGets(){
+
+}
+
 
 void buscarPokemones(int* id){
 	infoInicializacion configuracion = info->configuracion;
@@ -102,7 +119,6 @@ void buscarPokemones(int* id){
     }
 }
 }
-
 
 
 t_list* armarEntrenadores(infoInicializacion configuracion){

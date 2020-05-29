@@ -42,6 +42,7 @@ typedef struct
 	t_list* posicionesX;
 	t_list* posicionesY;
 	t_list* poseidos;
+	t_list* poseidosAplanados;
 	t_list* objetivos;
 	t_list* entrenadores;
 	int contimer;
@@ -59,6 +60,8 @@ typedef struct{
 	infoInicializacion configuracion;
 	t_log* logger;
 }GodStruct;
+
+
 
 int planificar(t_list*,t_log*,t_log*,infoInicializacion);
 
