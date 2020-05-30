@@ -18,13 +18,17 @@ bool modoDeadlock = 0;
 GodStruct* info;
 t_list* entrenadores;
 pthread_t hiloGets;
+pthread_t hiloAppeared;
+pthread_t hiloLocalised;
+pthread_t hiloCaught;
+pthread_t hiloMantenimientoConexion;
+
 int main(){
 	new.tipo = NEW;
 	ready.tipo = READY;
 	exec.tipo = EXEC;
 	blocked.tipo = BLOCKED;
 	term.tipo = TERM;
-	objetivosGlobales = list_create();
 	FILE* configfile;
 	entrenadores = list_create();
 	t_log* loggerTeam;
@@ -49,31 +53,48 @@ void limpiarObjetivosCumplidos(){
 	char* pokemonObjetivo;
 	t_list* (*punteroACombinarListas)(t_list*,t_list*);
 	punteroACombinarListas = &combinarListas;
-	t_list* poseidos = info->configuracion.poseidos;
-	poseidos = list_fold(poseidos,NULL,punteroACombinarListas);
-	for(int i=0; i<poseidos->elements_count;i++){
-		unPokemon = list_get(poseidos,i);
-		pokemonObjetivo = list_find(objetivosGlobales,unPokemon);
+	t_list* poseidosAplanados = list_duplicate(info->configuracion.poseidos);
+	bool encontrado;
+	void (*punteroAFree)(void*);
+	punteroAFree = &free;
 
+	poseidosAplanados = list_fold(poseidosAplanados,NULL,punteroACombinarListas);
+	for(int i=0; i<poseidosAplanados->elements_count;i++){
+		unPokemon = list_get(poseidosAplanados,i);
+		encontrado = false;
+		for(int j = 0; i<objetivosGlobales->elements_count && !(encontrado);j++){
+			pokemonObjetivo = list_get(objetivosGlobales,j);
+			if(strcmp(unPokemon,pokemonObjetivo)==0){
+				encontrado = true;
+				list_remove_and_destroy_element(objetivosGlobales,j,punteroAFree);
+			}
+		}
 	}
+	list_destroy_and_destroy_elements(poseidosAplanados,punteroAFree);
 }
 
 void mandarGets(){
-
+	int socket;
+	for(int i=0;i<objetivosGlobales->elements_count;i++){
+		socket = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
+		if(socket < 0){
+			printf("error de conexion");
+		}
+	}
 }
 
 
 void buscarPokemones(int* id){
 	infoInicializacion configuracion = info->configuracion;
-	trainer yo = list_get(info->configuracion.entrenadores,*id);
-	Estado estadoActual = yo.estadoActual;
-	t_list* misPokemones = yo.poseidos;
-	t_list* misObjetivos = yo.objetivos;
+	trainer* yo = list_get(info->configuracion.entrenadores,*id);
+	t_list* misPokemones = yo->poseidos;
+	t_list* misObjetivos = yo->objetivos;
+	yo->identificador = *id;
 	int cantMax = misObjetivos->elements_count;
 	int cantActual = misPokemones->elements_count;
 	char* unPokemon;
 
-	Estado estadoAnterior;
+	nombreEstado estadoAnterior;
 	bool soyLibre;
 	bool estoyEnDeadlock = 0;
 	wait(mandarGet);
@@ -82,22 +103,22 @@ void buscarPokemones(int* id){
     	wait(esteEsMio);
     	if(configuracion.algoritmo=="FIFO"||"SJFSD"){
     		if(!estoyEnDeadlock){
-    			switch(estadoActual){
-    				case NEW:
-    					estadoActual = READY;
+    			switch(yo->estadoActual){
+    				case 0:
+    					yo->estadoActual = READY;
     					estadoAnterior = NEW;
     					break;
-    				case BLOCKED:
-    					estadoActual = READY;
+    				case 3:
+    					yo->estadoActual = READY;
     					estadoAnterior = BLOCKED;
     					break;
     			}
     			wait(miTurno);
-    			estadoActual = EXEC;
+    			yo->estadoActual = EXEC;
     			estadoAnterior = READY;
     			meMuevo();
     			intentoCapturar();
-    			estadoActual = BLOCKED;
+    			yo->estadoActual = BLOCKED;
     			estadoAnterior = EXEC;
     			replanifico(); // SIGNAL
     			wait(mensajecaught);
@@ -106,7 +127,7 @@ void buscarPokemones(int* id){
     					list_add(misPokemones,unPokemon);
     						if(cantActual == cantMax){
     						if(tengoLosQueNecesito()){
-    							estadoActual = TERM;
+    							yo->estadoActual = TERM;
     							estadoAnterior = BLOCKED;
     							desalojoMisRecursos();
     						}else{
@@ -165,8 +186,8 @@ void asignarObjetivosGlobales(infoInicializacion configuracion){
 	t_list* (*punteroACombinarListas)(t_list*,t_list*);
 	punteroACombinarListas = &combinarListas;
 	t_list* objetivos = configuracion.objetivos;
-	objetivos = list_fold(objetivos,NULL,punteroACombinarListas);
-
+	objetivosGlobales = list_duplicate(objetivos);
+	objetivosGlobales = list_fold(objetivosGlobales,NULL,punteroACombinarListas);
 }
 
 trainer decidirFIFO(){

@@ -22,6 +22,7 @@ typedef enum{
 }nombreEstado;
 
 typedef struct{
+	int identificadorEstado;
 	nombreEstado tipo;
 	t_list* entrenadores;
 	int cantHilos;
@@ -35,6 +36,7 @@ typedef struct
 	t_list* objetivos;
 	t_list* poseidos;
 	t_posicion posicion;
+	pthread_mutex_t miSemaforo;
 } trainer;
 
 typedef struct
@@ -60,10 +62,6 @@ typedef struct{
 	infoInicializacion configuracion;
 	t_log* logger;
 }GodStruct;
-
-
-
-int planificar(t_list*,t_log*,t_log*,infoInicializacion);
 
 t_list* armarEntrenadores(infoInicializacion);
 
