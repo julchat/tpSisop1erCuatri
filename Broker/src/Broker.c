@@ -119,6 +119,7 @@ void atender_cliente(int socket_cliente){
 				encolar_mensaje(cola_mensajes_caught,mensaje_caught);
 				free(mensaje_caught);
 				break;
+		case 14: Suscribir(paquete->buffer);
 	}
 }
 
@@ -290,13 +291,31 @@ void* deserializar_new_pokemon(t_buffer buffer){
   // faltan las funciones que saquen mensajes de las colas
 
 //----------------------------------------------Manejo de Suscripciones------------------------------------------
-  /*void**/
-  //revisar como hacer llegar la info hasta acá
-  int suscripcion_New_Pokemon(int socket_cliente){
-	  Suscriber un_suscriptor = malloc(sizeof(Suscriber));
-	  //hay que generar un ID random, dárselo al cliente y guardarlo en la estructura para dps agregarlo a lista
-  }
+  void suscribir(t_buffer buffer, int socket_clente){
+      Suscriber un_suscriptor = malloc(sizeof(Suscriber));
+      void* stream = buffer->stream;
 
+      memcpy(&(un_suscriptor->id_suscriptor),stream,sizeof(uint32_t));
+      stream+=sizeof(uint32_t);
+      memcpy(&(un_suscriptor->lista_suscripta),stream,sizeof(uint32_t));
+      stream+=sizeof(uint32_t);
+      un_suscriptor->lista_suscripta = socket_clente;
+
+      switch(un_suscriptor->lista_suscripta){ //Me falta saber cómo establecer conexión entre el Broker y los suscriptores para poder mandarles mjes (falta en la estructura suscriber)
+
+      case 8 = suscripcion_New_Pokemon(Suscribers_New_Pokemon,un_suscriptor);
+
+      case 9 = suscripcion_Localized_Pokemon(Suscribers_Localized_Pokemon,un_suscriptor);
+
+      case 10 = suscripcion_Get_Pokemon(Suscribers_Get_Pokemon,un_suscriptor);
+
+      case 11 = suscripcion_Appeared_Pokemon(Suscribers_Appeared_Pokemon, un_suscriptor);
+
+      case 12 = suscripcion_Catch_Pokemon(Suscriber_Catch_Pokemon,un_suscriptor);
+
+      case 13 = suscripcion_Cought_Pokemon(Suscribers_Cought_Pokemon,un_suscriptor);
+
+  }
 
 return EXIT_SUCCESS;
 

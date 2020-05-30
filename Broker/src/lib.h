@@ -20,19 +20,20 @@
 typedef enum
 {
 	MENSAJE = 1,
-	/* NEW_POKEMON = 2;
-	 * LOCALIZED_POKEMON 3;
-	 * GET_POKEMON = 4;
-	 * APPEARED_POKEMON = 5;
-	 * CATCH_POKEMON = 6;
-	 * COUGHT_POKEMON = 7;
-	 * SUSCRIBER_NEW_POKEMON = 8;
-	 * SUSCRIBER_LOCALIZED_POKEMON = 9;
-	 * SUSCRIBER_GET_POKEMON = 10;
-	 * SUSCRIBER_APPEARED_POKEMON = 11;
-	 * SUSCRIBER_CATCH_POKEMON = 12;
-	 * SUSCRIBER_COUGTH_POKEMON = 13;
-	 */
+	NEW_POKEMON = 2,
+	LOCALIZED_POKEMON = 3,
+	GET_POKEMON = 4,
+	APPEARED_POKEMON = 5,
+	CATCH_POKEMON = 6,
+	COUGHT_POKEMON = 7,
+	SUSCRIBER_NEW_POKEMON = 8,
+	SUSCRIBER_LOCALIZED_POKEMON = 9,
+	SUSCRIBER_GET_POKEMON = 10,
+	SUSCRIBER_APPEARED_POKEMON = 11,
+	SUSCRIBER_CATCH_POKEMON = 12,
+	SUSCRIBER_COUGTH_POKEMON = 13,
+	RECIBIR_SUSCRIPCION = 14,
+
 }op_code; //IDENTIFICADORES DE CADA TIPO DE MENSAJE
 
 typedef struct
@@ -256,9 +257,10 @@ typedef struct{
 //--------------------------------------------------Estructuras de suscribers y listas de suscribers---------------------------------------
 
 typedef struct{
-	int id_suscriptor;
-	//hay que ver como hacer para añadirlo a la lista de suscriber que debe ir
-}Suscriber;
+	uint32_t id_suscriptor;
+	uint32_t lista_suscripta;
+	int socket_suscriptor;
+}Suscriber; //me lo manda el suscriber por mje
 
 typedef struct{
 	Suscriber un_suscriptor;
