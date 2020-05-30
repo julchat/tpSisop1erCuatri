@@ -3,7 +3,7 @@
 #include "lib.h"
 #include <pthread.h>
 #include <sys/socket.h>
-// commons/collections/list.h
+#include <commons/collections/list.h>
 
 
 int main(void) {
@@ -14,8 +14,15 @@ char* puerto_broker;
 char* ip_broker;
 int socket_client;
 
-administrador_mensajes* cola_mensajes = NULL;
 int id_unico = 0; // ojo con esto, ¡¡¡¡capaz!!! hay que sincronizarlo, lo vamos a usar como un contador
+
+administrador_mensajes* cola_mensajes_new = NULL;
+administrador_mensajes* cola_mensajes_localized = NULL;
+administrador_mensajes* cola_mensajes_get = NULL;
+administrador_mensajes* cola_mensajes_appeared = NULL;
+administrador_mensajes* cola_mensajes_catch = NULL;
+administrador_mensajes* cola_mensajes_caught = NULL;
+
 
 //Bloque memoria -> para los mensajes (malloquear lo que dice el config que nos dan)
 
@@ -84,32 +91,32 @@ void atender_cliente(int socket_cliente){
 
 	switch(paquete->codigo_operacion){
 		case 2: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
-				enlistar_mensaje(cola_mensajes,mensaje_new);
+				encolar_mensaje(cola_mensajes_new,mensaje_new);
 				free(mensaje_new);
 				break;
 
 		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer); //Falta hacer esta funcion con el tema de los vectores :C
-				enlistar_mensaje(cola_mensajes,mensaje_localized);
+				encolar_mensaje(cola_mensajes_localized,mensaje_localized);
 				free(mensaje_localized);
 			    break;
 
 		case 4: Get_Pokemon* mensaje_get = deserializar_get_pokemon(paquete->buffer);
-				enlistar_mensaje(cola_mensajes,mensaje_get);
+				encolar_mensaje(cola_mensajes_get,mensaje_get);
 				free(mensaje_get);
 				break;
 
 		case 5: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
-				enlistar_mensaje(cola_mensajes,mensaje_appeared);
+				encolar_mensaje(cola_mensajes_appeared,mensaje_appeared);
 				free(mensaje_appeared);
 				break;
 
 		case 6: Catch_Pokemon* mensaje_catch = deserializar_catch_pokemon(paquete->buffer);
-				enlistar_mensaje(cola_mensajes,mensaje_catch);
+				encolar_mensaje(cola_mensajes_catch,mensaje_catch);
 				free(mensaje_catch);
 				break;
 
 		case 7: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
-				enlistar_mensaje(cola_mensajes,mensaje_caught);
+				encolar_mensaje(cola_mensajes_caught,mensaje_caught);
 				free(mensaje_caught);
 				break;
 	}
@@ -209,19 +216,63 @@ void* deserializar_new_pokemon(t_buffer buffer){
 
   }
 
-//Falta deserializar localized
+// Cuando se serialize este mensaje, todos sus atributos deben mandarse como un string plano con el siguiente orden
+// nombreCantidad_coordenadasCoordenadaX1CoordenadaY1CoordenadaX2CoordenadaY2...
+// sin los "-"
+
+  void* deserializar_localized_pokemon(t_buffer buffer){
+
+	  Localized_Pokemon localized_pokemon = malloc(sizeof(Localized_Pokemon));
+
+	  void* temporal = buffer->stream;
+	  uint32_t longitud_nombre_pokemon;
+	  memcpy(&(longitud_nombre_pokemon),temporal,sizeof(uint32_t));
+	  temporal += sizeof(uint32_t);
+	  char* nombre_pokemon = malloc(longitud_nombre_pokemon);
+	  memcpy(&(nombre_pokemon),temporal,longitud_nombre_pokemon);
+	  temporal += longitud_nombre_pokemon;
+	  uint32_t cantidad_posiciones;
+	  memcpy(&(cantidad_posiciones),temporal,sizeof(uint32_t));
+	  temporal += sizeof(uint32_t);
+
+	  localized_pokemon->nombre->size_nombre = longitud_nombre_pokemon;
+	  localized_pokemon->nombre->nombre = nombre_pokemon;
+	  localized_pokemon->cantidad_coordenadas = cantidad_posiciones;
+
+
+	  for(int i; i<cantidad_posiciones; i++){
+
+		  uint32_t posicionX;
+		  uint32_t posicionY;
+
+		  memcpy(&(posicionX),temporal,sizeof(uint32_t));
+		  temporal += sizeof(uint32_t);
+		  memcpy(&(posicionY),temporal,sizeof(uint32_t));
+		  temporal += sizeof(uint32_t);
+
+		  t_posicion posiciones; // Si hay segmentation fault -> capaz hay que hacerle malloc.
+		  posiciones->posicion_X = posicionX;
+		  posiciones->posicion_Y = posicionY;
+
+		  localized_pokemon->posiciones[i] = posiciones;
+
+	  }
+
+	  return localized_pokemon;
+  }
+
+
 
 //----------------------------------------------Enlistador(?)-----------------------------------------------------
 
   /* Se encarga de meter los mensajes (la estructura administrador_mensaje) a la lista, tambien es el que
    * genera y setea los id_unico de cada mensaje
-   * Tendrian que ser una cola? estoy un poco perdido en esto, esto como son los generales estan bien como listas?
    */
 
-  void enlistar_mensaje(administrador_mensajes *p,void* unMensaje){ //agrega los nodos al final de la lista
+  void encolar_mensaje(administrador_mensajes *p,void* unMensaje){ //Agrega los nodos al final de la lista
 	  administrador_mensajes nuevo;
 	  nuevo->un_mensaje->mensaje = unMensaje;
-	  nuevo->un_mensaje->id_unico_mensaje = id_unico; // la variable global
+	  nuevo->un_mensaje->id_unico_mensaje = id_unico; // La variable global
 	  id_unico++;
 	  nuevo->siguiente_info = NULL;
 	  if (p == NULL) {
@@ -235,6 +286,8 @@ void* deserializar_new_pokemon(t_buffer buffer){
 		  auxiliar->siguiente_info = nuevo;
 	  }
   }
+
+  // faltan las funciones que saquen mensajes de las colas
 
 //----------------------------------------------Manejo de Suscripciones------------------------------------------
   /*void**/

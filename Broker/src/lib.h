@@ -223,6 +223,11 @@ typedef struct{
 
 }New_Pokemon;
 
+/* Para enviar el mensaje localized hay que serializar la siguiente estructura, la cual sera introducida
+ en el void* stream del t_buffer, cuando la deserializemos la cargamos en el struct Localized_Pokemon
+ el formateo del string a seguir es nombre-cantidad_coordenadas-coordenadaX1-coordenadaY1-coordenadaX2-coordenadaY2...
+ sin los "-"
+*/
 
 typedef struct{
 	t_nombre_pokemon nombre;
