@@ -6,11 +6,15 @@
 #include <commons/collections/list.h>
 
 
+// revisar que va en el main y que no
+
+int id_unico = 0; // ojo con esto, ¡¡¡¡capaz!!! hay que sincronizarlo, lo vamos a usar como un contador
+
 int main(void) {
 
 
 int socket_client;
-int id_unico = 0; // ojo con esto, ¡¡¡¡capaz!!! hay que sincronizarlo, lo vamos a usar como un contador
+
 
 administrador_mensajes* cola_mensajes_new = NULL;
 administrador_mensajes* cola_mensajes_localized = NULL;
@@ -116,147 +120,7 @@ void atender_cliente(int socket_cliente){
 }
 
 
-// ----------------------------- Deserializadores (esa palabra si quiera existe?) ---------------------------------------
-
-// Vamos a tener que luego pasar estas funciones a la libreria para que las usen los otros modulos
-
-void* deserializar_new_pokemon(t_buffer buffer){
-
-	New_Pokemon new_pokemon = malloc(sizeof(New_Pokemon));
-
-	void* stream = buffer->stream;
-
-	memcpy(&(new_pokemon->nombre->size_nombre),stream,sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	new_pokemon->nombre->nombre = malloc(new_pokemon->nombre->size_nombre);
-	memcpy(&(new_pokemon->nombre->nombre),stream,new_pokemon->nombre->size_nombre);
-	stream += new_pokemon->nombre->size_nombre;
-	memcpy(&(new_pokemon->posicion->posicion_X),stream,sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(new_pokemon->posicion->posicion_Y),stream,sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-	memcpy(&(new_pokemon->cantidad),stream,sizeof(uint32_t));
-	stream += sizeof(uint32_t);
-
-	return new_pokemon;
-
-}
-
- void* deserializar_get_pokemon(t_buffer buffer){
-
-	 Get_Pokemon get_pokemon = malloc(sizeof(Get_Pokemon));
-
-	 void* stream = buffer->stream;
-
-	 memcpy(&(get_pokemon->nombre->size_nombre),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
-	 get_pokemon->nombre->nombre = malloc(get_pokemon->nombre->size_nombre);
-	 memcpy(&(get_pokemon->nombre->nombre),stream,get_pokemon->nombre->size_nombre);
-	 stream += get_pokemon->nombre->size_nombre;
-
-	 return get_pokemon;
- }
-
- void* deserializar_appeared_pokemon(t_buffer buffer){
-
-	 Appeared_Pokemon appeared_pokemon = malloc(sizeof(Appeared_Pokemon));
-
-	 void* stream = buffer->stream;
-
-	 memcpy(&(appeared_pokemon->nombre->size_nombre));
-	 stream += sizeof(uint32_t);
-	 appeared_pokemon->nombre->nombre = malloc(appeared_pokemon->nombre->size_nombre);
-	 memcpy(&(appeared_pokemon->nombre->nombre),stream,appeared_pokemon->nombre->size_nombre);
-	 stream += appeared_pokemon->nombre->size_nombre;
-	 memcpy(&(appeared_pokemon->posicion->posicion_X),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
-	 memcpy(&(appeared_pokemon->posicion->posicion_Y),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
-
-	 return appeared_pokemon;
- }
-
-  void* deserializar_catch_pokemon(t_buffer buffer){
-
-	 Catch_Pokemon catch_pokemon = malloc(sizeof(Catch_Pokemon));
-
-	 void* stream = buffer->stream;
-
-	 memcpy(&(catch_pokemon->nombre->size_nombre));
-	 stream += sizeof(uint32_t);
-	 catch_pokemon->nombre->nombre = malloc(catch_pokemon->nombre->size_nombre);
-	 memcpy(&(catch_pokemon->nombre->nombre),stream,catch_pokemon->nombre->size_nombre);
-	 stream += catch_pokemon->nombre->size_nombre;
-	 memcpy(&(catch_pokemon->posicion->posicion_X),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
-	 memcpy(&(catch_pokemon->posicion->posicion_Y),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
-
-	 return catch_pokemon;
-
-  }
-
-  void* deserializar_caught_pokemon(t_buffer buffer){
-
-	  Caught_Pokemon caught_pokemon = malloc(sizeof(Caught_Pokemon));
-
-	  void* stream = buffer->stream;
-
-	 memcpy(&(caught_pokemon->valor),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
-
-	 return caught_pokemon;
-
-  }
-
-// Cuando se serialize este mensaje, todos sus atributos deben mandarse como un string plano con el siguiente orden
-// nombreCantidad_coordenadasCoordenadaX1CoordenadaY1CoordenadaX2CoordenadaY2...
-// sin los "-"
-
-  void* deserializar_localized_pokemon(t_buffer buffer){
-
-	  Localized_Pokemon localized_pokemon = malloc(sizeof(Localized_Pokemon));
-
-	  void* temporal = buffer->stream;
-	  uint32_t longitud_nombre_pokemon;
-	  memcpy(&(longitud_nombre_pokemon),temporal,sizeof(uint32_t));
-	  temporal += sizeof(uint32_t);
-	  char* nombre_pokemon = malloc(longitud_nombre_pokemon);
-	  memcpy(&(nombre_pokemon),temporal,longitud_nombre_pokemon);
-	  temporal += longitud_nombre_pokemon;
-	  uint32_t cantidad_posiciones;
-	  memcpy(&(cantidad_posiciones),temporal,sizeof(uint32_t));
-	  temporal += sizeof(uint32_t);
-
-	  localized_pokemon->nombre->size_nombre = longitud_nombre_pokemon;
-	  localized_pokemon->nombre->nombre = nombre_pokemon;
-	  localized_pokemon->cantidad_coordenadas = cantidad_posiciones;
-
-
-	  for(int i; i<cantidad_posiciones; i++){
-
-		  uint32_t posicionX;
-		  uint32_t posicionY;
-
-		  memcpy(&(posicionX),temporal,sizeof(uint32_t));
-		  temporal += sizeof(uint32_t);
-		  memcpy(&(posicionY),temporal,sizeof(uint32_t));
-		  temporal += sizeof(uint32_t);
-
-		  t_posicion posiciones; // Si hay segmentation fault -> capaz hay que hacerle malloc.
-		  posiciones->posicion_X = posicionX;
-		  posiciones->posicion_Y = posicionY;
-
-		  localized_pokemon->posiciones[i] = posiciones;
-
-	  }
-
-	  return localized_pokemon;
-  }
-
-
-
-//----------------------------------------------Enlistador(?)-----------------------------------------------------
+//----------------------------------------------Manejo de colas(que son listas, shh nadie lo sabe)----------------------------------------
 
   /* Se encarga de meter los mensajes (la estructura administrador_mensaje) a la lista, tambien es el que
    * genera y setea los id_unico de cada mensaje
@@ -280,7 +144,8 @@ void* deserializar_new_pokemon(t_buffer buffer){
 	  }
   }
 
-  // faltan las funciones que saquen mensajes de las colas
+  // faltan las funciones que saquen mensajes de las colas, hay que ver el criterio para sacar mensajes de las colas
+
 
 //----------------------------------------------Manejo de Suscripciones------------------------------------------
   void suscribir(t_buffer buffer, int socket_clente){
@@ -307,14 +172,12 @@ void* deserializar_new_pokemon(t_buffer buffer){
 
       case 13 = suscripcion_Cought_Pokemon(Suscribers_Cought_Pokemon,un_suscriptor);
 
+      }
+
   }
 
 return EXIT_SUCCESS;
 
-
-
-
 }
-
 
 
