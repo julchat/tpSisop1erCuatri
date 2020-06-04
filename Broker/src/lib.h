@@ -13,8 +13,24 @@
 #include<netdb.h>
 #include<string.h>
 
+//---------------------------------------Configuración Broker--------------------------------------------//
 
-//--------------------------------------------------------------------------------- Estructura de paquetes
+typedef struct
+{
+	int tamano_memoria;
+	int tamano_minimo_particion;
+	char* algoritmo_memoria;
+	char* algoritmo_reemplazo;
+	char* algoritmo_particion_libre;
+	char* ip_broker;
+	int puerto_broker;
+	int frecuencia_compactacion;
+	char* log_file;
+
+}t_config_broker;
+
+
+//---------------------------------------Estructura de paquetes-------------------------------------------//
 
 
 typedef enum
@@ -49,7 +65,7 @@ typedef struct
 } t_paquete;
 
 
-// -------------------------------------------------------------------------- Manejo de loggers y conexiones 
+// ------------------------------- Manejo de loggers y conexiones --------------------------------------
 
 
 t_log* iniciar_logger_de_nivel_minimo(t_log_level level, char* ruta){
@@ -92,7 +108,7 @@ void terminar_programa(int conexion, t_log* logger, t_config* config){
 	liberar_conexion(conexion);
 }
 
-//---------------------------------------------------------------------- Manejo de mensaje
+//---------------------------------------------------------Manejo de mensaje---------------------------------
 
 void* serializar_paquete(t_paquete* paquete, int *bytes){
 
@@ -163,6 +179,7 @@ char* recibir_mensaje(int socket_cliente){
 	recv(socket_cliente, buffer, buffer_size, 0);
 	return buffer;
 }
+
 //--------------------------------------------------Colas de Mensajes------------------------------------
 
 typedef struct{

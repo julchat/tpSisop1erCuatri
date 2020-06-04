@@ -8,12 +8,8 @@
 
 int main(void) {
 
-char* config;
-t_log* logger;
-char* puerto_broker;
-char* ip_broker;
-int socket_client;
 
+int socket_client;
 int id_unico = 0; // ojo con esto, ¡¡¡¡capaz!!! hay que sincronizarlo, lo vamos a usar como un contador
 
 administrador_mensajes* cola_mensajes_new = NULL;
@@ -24,35 +20,31 @@ administrador_mensajes* cola_mensajes_catch = NULL;
 administrador_mensajes* cola_mensajes_caught = NULL;
 
 
-//Bloque memoria -> para los mensajes (malloquear lo que dice el config que nos dan)
+//Bloque memoria -> para los mensajes (malloquear lo que dice el config que nos dan) FALTA!!!!!!!!!!!!!!!!!!!!!!
 
+// --------------------------------- Levantando la configuración ---------------------------------------------------
 
+t_config_broker configuracion_broker;
 
-/* HAY QUE LEVANTAR UNA CONFIG, NO SETEARLA!
-config = leer_config("/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker"); //Esto solo va a funcionar en la compu de juan
-config_set_value(config,"TAMANO_MEMORIA",aca va el valor del tamaño [Numerico]);
-config_set_value(config,"TAMANO_MINIMO_PARTICION",aca va el valor del tamaño minimo de particion[Numerico]);
-config_set_value(config,"ALGORITMO_MEMORIA",aca va el valor del algoritmo de memoria[String]);
-config_set_value(config,"ALGORITMO_REEMPLAZO",aca va el valor del algoritmo de reemplazo[String]);
-config_set_value(config,"ALGORITMO_PARTICION_LIBRE",aca va el valor del algoritmo de particion libre[String]);
-config_set_value(config,"IP_BROKER","127.0.0.1");
-config_set_value(config,"PUERTO_BROKER",6009);
-config_set_value(config,"FRECUENCIA_COMPACTACION",aca va el valor de la frecuencia de compactacion[Numerico]);
-config_set_value(config,"LOG_FILE","/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker");
+t_config* config = config_create("config.txt");
 
+configuracion_broker->tamano_memoria =  config_get_int_value(config,"TAMANO_MEMORIA");
+configuracion_broker->tamano_minimo_particion = config_get_int_value(config,"TAMANO_MINIMO_PARTICION");
+configuracion_broker->algoritmo_memoria = config_get_string_value(config,"ALGORITMO_MEMORIA");
+configuracion_broker->algoritmo_reemplazo = config_get_string_value(config,"ALGORITMO_REEMPLAZO");
+configuracion_broker->algoritmo_particion_libre = config_get_string_value(config,"ALGORITMO_PARTICION_LIBRE");
+configuracion_broker->ip_broker = config_get_string_value(config,"IP_BROKER");
+configuracion_broker->puerto_broker =  config_get_int_value(config,"PUERTO_BROKER");
+configuracion_broker->frecuencia_compactacion =  config_get_int_value(config,"FRECUENCIA_COMPACTACION");
+configuracion_broker->log_file = config_get_string_value(config,"LOG_FILE");
 
-
-puerto_broker = config_get_string_value(config,"PUERTO_BROKER");
-ip_broker = config_get_string_value(config,"IP_BROKER");
-
-logger = iniciar_logger_de_nivel_minimo(LOG_LEVEL_ERROR,"/home/utnso/TP OPERATIVOS/tp-2020-1c-CheckPoint/Broker");
-*/
+t_log* logger = iniciar_logger_de_nivel_minimo(LOG_LEVEL_INFO,configuracion_broker->log_file);
+socket_client = crear_conexion(configuracion_broker->ip_broker,configuracion_broker->puerto_broker);
+// Hay un problema de tipos con crear_conexion y lo que levantamos desde la config, IP_BROKER es un INT pero la funcion
+// lo usa como char* consultar !!!!!!!
 
 // -------------------------------------------- Punteros a las listas ----------------------------------------------
 
-
-
-//socket_client = crear_conexion(ip_broker,puerto_broker); esto tambien se levanta desde la config creo
 
 	while(1){
 		esperar_conexion(socket_client);
@@ -63,7 +55,7 @@ void esperar_conexion(int socket_cliente){
 	log_info(logger,"Se conecto un cliente con el socket numero %d", cliente);
 	pthread_t hilo_nuevo_cliente;
 		if(pthread_create(&hilo_nuevo_cliente,NULL,(void*)atender_cliente,(void*)cliente)!=0){
-			log_error(logger,"Error al crear el hilo de journal");
+			log_error(logger,"Error al crear el hilo de cliente");
 			}
 		pthread_detach(hilo_nuevo_cliente);
 		//close(cliente);
