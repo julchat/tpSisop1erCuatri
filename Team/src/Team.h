@@ -58,10 +58,22 @@ typedef struct
 	char* logpath;
 } infoInicializacion;
 
+
 typedef struct{
 	infoInicializacion configuracion;
 	t_log* logger;
 }GodStruct;
+
+typedef struct{
+	uint32_t size_nombre;
+	char* nombre;
+}t_nombre_pokemon;
+
+typedef struct{
+	t_nombre_pokemon nombre;
+	uint32_t id_mensaje;
+}Get_Pokemon;
+
 
 t_list* armarEntrenadores(infoInicializacion);
 

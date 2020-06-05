@@ -17,11 +17,13 @@ Estado term;
 bool modoDeadlock = 0;
 GodStruct* info;
 t_list* entrenadores;
-pthread_t hiloGets;
+t_list* mensajesGet;
 pthread_t hiloAppeared;
 pthread_t hiloLocalised;
 pthread_t hiloCaught;
 pthread_t hiloMantenimientoConexion;
+pthread_t hiloReconexion;
+bool reconectando = 0;
 
 int main(){
 	new.tipo = NEW;
@@ -74,13 +76,61 @@ void limpiarObjetivosCumplidos(){
 }
 
 void mandarGets(){
+	mensajesGet = list_create();
 	int socket;
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	t_buffer* buffer;
+	Get_Pokemon pokemon;
 	for(int i=0;i<objetivosGlobales->elements_count;i++){
 		socket = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
 		if(socket < 0){
-			printf("error de conexion");
+			printf("error de conexion, reconectando en %d segundos", info->configuracion.contimer);
+			if(!(reconectando)){
+				reconectando = 1;
+				pthread_create(hiloReconexion,NULL,reconectar,NULL);
+			}
+		}
+		else{
+			pokemon.nombre.nombre = list_get(objetivosGlobales, i);
+			pokemon.nombre.size_nombre = strlen(pokemon.nombre.nombre) + 1;
+			buffer = serializarGetPokemon(pokemon);
+
+			paquete->codigo_operacion = 4;
+			paquete->buffer = buffer;
+
+			void* a_enviar = malloc(sizeof(uint8_t) + sizeof(uint32_t) + buffer->size );
+			int offset = 0;
+			memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
+			offset = offset + sizeof(uint8_t);
+			memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(uint32_t));
+			offset = offset + sizeof(uint32_t);
+			memcpy(a_enviar + offset, paquete->buffer->stream, buffer->size);
+			offset = offset + buffer->size;
+
+			send(socket, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t), 0);
+			free(a_enviar);
+			free(paquete->buffer->stream);
+			free(paquete->buffer);
+			free(paquete);
+
+			recv(socket, &(pokemon.id_mensaje), sizeof(uint32_t) , 0);
+			list_add(mensajesGet, &(pokemon));
 		}
 	}
+}
+
+t_buffer* serializarGetPokemon(Get_Pokemon pokemon){
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = pokemon.nombre.size_nombre + sizeof(uint32_t);
+	void* stream = malloc(buffer->size);
+	int offset = 0;
+	memcpy(stream + offset, &pokemon.nombre.size_nombre, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(stream + offset, pokemon.nombre.nombre, strlen(pokemon.nombre.nombre)+1);
+	offset = offset + strlen(pokemon.nombre.nombre)+1;
+
+	buffer->stream= stream;
+	return buffer;
 }
 
 
@@ -141,6 +191,21 @@ void buscarPokemones(int* id){
 }
 }
 
+void reconectar(){
+usleep(info->configuracion.contimer);
+int socket;
+while (true){
+
+	socket = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
+	if(socket<0){
+		printf("error de conexion, reconectando en %d segundos", info->configuracion.contimer);
+		usleep(info->configuracion.contimer);
+	}else{
+		reconectando = 0;
+		exit(0);
+		}
+}
+}
 
 t_list* armarEntrenadores(infoInicializacion configuracion){
 	t_list* entrenadores = list_create();
