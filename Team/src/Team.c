@@ -39,7 +39,6 @@ int main(){
 	inicializarListas(&configuracion,&new,&ready,&exec,&blocked,&term);
 	configuracion = obtenerConfiguracion(configfile);
 	fclose(configfile);
-	pthread_create(&hiloGets,NULL,mandarGets,NULL);
 	loggerTeam = iniciar_logger_de_nivel_minimo(LOG_LEVEL_INFO, configuracion.logpath);
 	asignarObjetivosGlobales(configuracion);
 	info->logger = loggerTeam;
@@ -87,7 +86,7 @@ void mandarGets(){
 			printf("error de conexion, reconectando en %d segundos", info->configuracion.contimer);
 			if(!(reconectando)){
 				reconectando = 1;
-				pthread_create(hiloReconexion,NULL,reconectar,NULL);
+				pthread_create(&hiloReconexion,NULL,reconectar,NULL);
 			}
 		}
 		else{

@@ -83,6 +83,10 @@ void buscarPokemones(int*);
 
 t_list* armarEntrenadores(infoInicializacion configuracion);
 
+t_buffer* serializarGetPokemon(Get_Pokemon pokemon);
+
+void reconectar();
+
 void asignarObjetivosGlobales(infoInicializacion);
 
 #endif /* TEAM_SRC_TEAM_H_ */
