@@ -30,7 +30,7 @@ administrador_mensajes* cola_mensajes_caught = NULL;
 
 t_config_broker configuracion_broker;
 
-t_config* config = config_create("config.txt");
+t_config* config = config_create("config.txt"); // Asumimos que el archivo está en la misma carpeta que el modulo.
 
 configuracion_broker->tamano_memoria =  config_get_int_value(config,"TAMANO_MEMORIA");
 configuracion_broker->tamano_minimo_particion = config_get_int_value(config,"TAMANO_MINIMO_PARTICION");
@@ -38,14 +38,14 @@ configuracion_broker->algoritmo_memoria = config_get_string_value(config,"ALGORI
 configuracion_broker->algoritmo_reemplazo = config_get_string_value(config,"ALGORITMO_REEMPLAZO");
 configuracion_broker->algoritmo_particion_libre = config_get_string_value(config,"ALGORITMO_PARTICION_LIBRE");
 configuracion_broker->ip_broker = config_get_string_value(config,"IP_BROKER");
-configuracion_broker->puerto_broker =  config_get_int_value(config,"PUERTO_BROKER");
+configuracion_broker->puerto_broker =  config_get_string_value(config,"PUERTO_BROKER");
 configuracion_broker->frecuencia_compactacion =  config_get_int_value(config,"FRECUENCIA_COMPACTACION");
 configuracion_broker->log_file = config_get_string_value(config,"LOG_FILE");
 
 t_log* logger = iniciar_logger_de_nivel_minimo(LOG_LEVEL_INFO,configuracion_broker->log_file);
 socket_client = crear_conexion(configuracion_broker->ip_broker,configuracion_broker->puerto_broker);
 // Hay un problema de tipos con crear_conexion y lo que levantamos desde la config, IP_BROKER es un INT pero la funcion
-// lo usa como char* consultar !!!!!!!
+// lo usa como char* (lo levantamos como char*, no hay problema)
 
 // -------------------------------------------- Punteros a las listas ----------------------------------------------
 
@@ -88,34 +88,42 @@ void atender_cliente(int socket_cliente){
 	switch(paquete->codigo_operacion){
 		case 2: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
 				encolar_mensaje(cola_mensajes_new,mensaje_new);
+				log_info(logger,"Se agregó un mensaje a la cola de mensajes New_Pokemon");
 				free(mensaje_new);
 				break;
 
 		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer); //Falta hacer esta funcion con el tema de los vectores :C
 				encolar_mensaje(cola_mensajes_localized,mensaje_localized);
+				log_info(logger,"Se agregó un mensaje a la cola de mensajes Localized_Pokemon");
 				free(mensaje_localized);
 			    break;
 
 		case 4: Get_Pokemon* mensaje_get = deserializar_get_pokemon(paquete->buffer);
 				encolar_mensaje(cola_mensajes_get,mensaje_get);
+				log_info(logger,"Se agregó un mensaje a la cola de mensajes Get_Pokemon");
 				free(mensaje_get);
 				break;
 
 		case 5: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
 				encolar_mensaje(cola_mensajes_appeared,mensaje_appeared);
+				log_info(logger,"Se agregó un mensaje a la cola de mensajes Appeared_Pokemon");
 				free(mensaje_appeared);
 				break;
 
 		case 6: Catch_Pokemon* mensaje_catch = deserializar_catch_pokemon(paquete->buffer);
 				encolar_mensaje(cola_mensajes_catch,mensaje_catch);
+				log_info(logger,"Se agregó un mensaje a la cola de mensajes Catch_Pokemon");
 				free(mensaje_catch);
 				break;
 
 		case 7: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
 				encolar_mensaje(cola_mensajes_caught,mensaje_caught);
+				log_info(logger,"Se agregó un mensaje a la cola de mensajes Caught_Pokemon");
 				free(mensaje_caught);
 				break;
+
 		case 14: Suscribir(paquete->buffer);
+				 break;
 	}
 }
 
@@ -148,6 +156,7 @@ void atender_cliente(int socket_cliente){
 
 
 //----------------------------------------------Manejo de Suscripciones------------------------------------------
+
   void suscribir(t_buffer buffer, int socket_clente){
       Suscriber un_suscriptor = malloc(sizeof(Suscriber));
       void* stream = buffer->stream;

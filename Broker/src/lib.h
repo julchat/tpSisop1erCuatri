@@ -72,7 +72,7 @@ typedef struct
 
 t_log* iniciar_logger_de_nivel_minimo(t_log_level level, char* ruta){
 
-	t_log *logger = log_create(ruta,"logger",true,level);
+	t_log *logger = log_create(ruta,"logger",false,level); // Nos exigen no mostrar por pantalla.
 	if(logger == NULL){
 		printf("No pude crear el logger \n");
 		exit(1);
