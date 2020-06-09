@@ -13,158 +13,95 @@
 #include "libbase.h"
 
 
-infoInicializacion obtenerConfiguracion(FILE* configfile){
-	infoInicializacion config;
-	char* buffer = (char*) malloc(sizeof(char));
-	*buffer = '\0';
-	int posicionX, posicionY;
-	t_list* pokemonesObjetivos = list_create();
-	t_list* pokemonesPoseidos = list_create();
-	t_list* objetivos = list_create();
-	t_list* poseidos = list_create();
-	t_list* posicionesX = list_create();
-	t_list* posicionesY = list_create();
-	void (*punteroAFree)(void*);
-	punteroAFree = &free;
-	void (*punteroADestruirListaYSublistas)(void*);
-	punteroADestruirListaYSublistas = &(destruir_sublistas_y_sus_elementos);
-	char c= '\0';
-
-	// PRIMERA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-		c = fgetc(configfile);
-	}
-		while(c!=']' &&  c!='=' && !feof(configfile)){
-			c = fgetc(configfile);
-			agregarCaracter(&buffer, c);
-			posicionX = atoi(buffer);
-			list_add(posicionesX,&posicionX);
-			buffer = vaciarBuffer(buffer);
-			if(fgetc(configfile)!='|'){
-				printf("error en parsing posiciones |");
-			}
-			c = fgetc(configfile);
-			agregarCaracter(&buffer,c);
-			posicionY = atoi(buffer);
-			list_add(posicionesY,&posicionY);
-			buffer = vaciarBuffer(buffer);
-			fgetc(configfile);
-		}
-
-	// SEGUNDA LÍNEA
+infoInicializacion obtenerConfiguracion(char* configpath){
+infoInicializacion inicializacion;
+t_config* configuracion = config_create(configpath);
+char** read_array;
+t_list* listPokemonesDeUnEntrenador = list_create();
+t_list* listObjetivosDeUnEntrenador = list_create();
+t_list* listCoordenadas = list_create();
+int* unaCoordenadaEntera;
+uint32_t* coordenadaConvertida;
 
 
-	while(c!='=' && (!feof(configfile))){
-			c = fgetc(configfile);
-		}
-	while(c!=']' && !feof(configfile)){
-		c = fgetc(configfile);
-		while(c!=',' && c!=']'){
-			c = fgetc(configfile);
-			while(c!='|' && c!= ',' && c!=']'){
-				agregarCaracter(&buffer,c);
-				c= fgetc(configfile);
-			}
-		list_add(pokemonesPoseidos,buffer);
-		buffer = vaciarBuffer(buffer);
-		}
-		list_add(poseidos, pokemonesPoseidos);
-		list_destroy_and_destroy_elements(pokemonesPoseidos,punteroAFree);
-		pokemonesPoseidos = list_create();
-	}
 
-	// TERCERA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-				c = fgetc(configfile);
-			}
-		while(c!=']' && !feof(configfile)){
-			c = fgetc(configfile);
-			while(c!=',' && c!=']'){
-				c = fgetc(configfile);
-				while(c!='|' && c!= ',' && c!=']'){
-					agregarCaracter(&buffer,c);
-					c= fgetc(configfile);
-				}
-			list_add(pokemonesObjetivos,buffer);
-			buffer = vaciarBuffer(buffer);
-			}
-			list_add(objetivos, pokemonesObjetivos);
-			list_destroy_and_destroy_elements(pokemonesObjetivos,punteroAFree);
-			pokemonesObjetivos = list_create();
-		}
-
-		//CUARTA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-	c = fgetc(configfile);
-	}
-	fscanf(configfile,"%i",&(config.contimer));
-
-		// QUINTA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-	c = fgetc(configfile);
-	}
-	fscanf(configfile,"%i",&(config.retardo));
-
-		// SEXTA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-	c = fgetc(configfile);
-	}
-	fscanf(configfile,"%s",(config.algoritmo));
-
-		// SÉPTIMA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-	c = fgetc(configfile);
-	}
-	fscanf(configfile,"%i",&(config.quantum));
-
-		// OCTAVA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-	c = fgetc(configfile);
-	}
-	fscanf(configfile,"%i",&(config.estim));
-
-		// NOVENA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-	c = fgetc(configfile);
-	}
-	fscanf(configfile,"%s",(config.ip));
-
-		// DÉCIMA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-	c = fgetc(configfile);
-	}
-	fscanf(configfile,"%s",(config.puerto));
-
-		// UNDÉCIMA LÍNEA
-
-	while(c!='=' && (!feof(configfile))){
-	c = fgetc(configfile);
-	}
-	fscanf(configfile,"%s",(config.logpath));
-
-		// ASIGNACIONES RESTANTES
-	!feof(configfile)?printf("parser todo bien"):printf("ripeo el parser");
-	config.posicionesX = posicionesX;
-	config.posicionesY = posicionesY;
-	config.poseidos = poseidos;
-	config.objetivos = objetivos;
-	list_destroy(pokemonesObjetivos); //Estas dos están vacías
-	list_destroy(pokemonesPoseidos); // por eso no uso la otra destroy
-	list_destroy(posicionesX);
-	list_destroy(posicionesY);
-	list_destroy_and_destroy_elements(poseidos,punteroADestruirListaYSublistas);
-	list_destroy_and_destroy_elements(objetivos,punteroADestruirListaYSublistas);
-	return config;
+//PRIMERA LÍNEA
+read_array = config_get_array_value(configuracion,"POSICIONES_ENTRENADORES");
+void transformarAEnteroYagregarAListCoordenadas(char* unaCoordenada){
+	*unaCoordenadaEntera = atoi(unaCoordenada);
+	*coordenadaConvertida = *unaCoordenadaEntera;
+	list_add(listCoordenadas,coordenadaConvertida);
 }
+void armarListaCoordenadas(char* coordenadasDeUnEntrenador){
+	if(coordenadasDeUnEntrenador != NULL){
+		char** coordenadas = string_split(coordenadasDeUnEntrenador, "|");
+		string_iterate_lines(coordenadas,transformarAEnteroYagregarAListCoordenadas);
+	}
+}
+
+string_iterate_lines(read_array,armarListaCoordenadas);
+for(int i=0; i<listCoordenadas->elements_count;i++){
+	if(esPar(i)){
+	list_add(inicializacion.posicionesX, list_get(listCoordenadas,i));
+	}else{
+	list_add(inicializacion.posicionesY, list_get(listCoordenadas,i));
+	}
+}
+list_destroy(listCoordenadas);
+
+//SEGUNDA LÍNEA
+read_array = config_get_array_value(configuracion,"POKEMON_ENTRENADORES");
+void agregarAListPokemonesDeUnEntrenador(char* unPokemon){
+	list_add(listPokemonesDeUnEntrenador, unPokemon);
+}
+void armarListaPoseidos(char* pokemonesDeUnEntrenador){
+	if(pokemonesDeUnEntrenador != NULL){
+		char** pokes = string_split(pokemonesDeUnEntrenador,"|");
+		string_iterate_lines(pokes,agregarAListPokemonesDeUnEntrenador);
+		list_add(inicializacion.poseidos, listPokemonesDeUnEntrenador);
+		list_destroy(listPokemonesDeUnEntrenador);
+		list_create(listPokemonesDeUnEntrenador);
+	}
+}
+string_iterate_lines(read_array, armarListaPoseidos);
+list_destroy(listPokemonesDeUnEntrenador);
+
+//TERCERA LÍNEA
+read_array = config_get_array_value(configuracion,"OBJETIVOS_ENTRENADORES");
+void agregarAListObjetivosDeUnEntrenador(char* unPokemon){
+	list_add(listObjetivosDeUnEntrenador, unPokemon);
+}
+void armarListaObjetivos(char* objetivosDeUnEntrenador){
+	if(objetivosDeUnEntrenador != NULL){
+		char** pokes = string_split(objetivosDeUnEntrenador,"|");
+		string_iterate_lines(pokes,agregarAListObjetivosDeUnEntrenador);
+		list_add(inicializacion.objetivos, listObjetivosDeUnEntrenador);
+		list_destroy(listObjetivosDeUnEntrenador);
+		list_create(listObjetivosDeUnEntrenador);
+	}
+}
+string_iterate_lines(read_array, armarListaObjetivos);
+list_destroy(listObjetivosDeUnEntrenador);
+
+//DEMÁS LÍNEAS
+inicializacion.contimer = config_get_int_value(configuracion,"TIEMPO_RECONEXION");
+inicializacion.retardo = config_get_int_value(configuracion, "RETARDO_CICLO_CPU");
+inicializacion.algoritmo= config_get_string_value(configuracion,"ALGORITMO_PLANIFICACION");
+inicializacion.quantum = config_get_int_value(configuracion, "QUANTUM");
+inicializacion.alpha = config_get_int_value(configuracion, "ALPHA");
+inicializacion.estim = config_get_int_value(configuracion, "ESTIMACION_INICIAL");
+inicializacion.ip = config_get_string_value(configuracion, "IP_BROKER");
+inicializacion.puerto = config_get_string_value(configuracion, "PUERTO_BROKER");
+inicializacion.logpath = config_get_string_value(configuracion, "LOG_FILE");
+return inicializacion;
+}
+
+
+
+
+
+
+
 
 void inicializarListas(infoInicializacion* configuracion, Estado* n, Estado* r, Estado* e, Estado* b, Estado* t){
 	configuracion->objetivos = list_create();
@@ -184,22 +121,6 @@ void inicializarListas(infoInicializacion* configuracion, Estado* n, Estado* r, 
 }
 
 
-
-void agregarCaracter(char** buffer, char c){
-	size_t len = strlen(*buffer);
-	free(*buffer);
-	char* buffer2 = malloc(len+1+1);
-	buffer2[len] = c;
-	buffer2[len+1] = '\0';
-	*buffer = buffer2;
-}
-
-char* vaciarBuffer (char* bufferViejo){
-	free(bufferViejo);
-	char* bufferNuevo = (char*) malloc(sizeof(char));
-	*bufferNuevo = '\0';
-	return bufferNuevo;
-}
 
 void destruir_sublistas_y_sus_elementos(void* element){
 	list_destroy_and_destroy_elements(element,free);
@@ -225,3 +146,7 @@ void destruir_sublistas_y_sus_elementos(void* element){
  return primeraLista;
  }
 
+
+bool esPar(uint32_t numero){
+	return (numero%2)==0;
+}

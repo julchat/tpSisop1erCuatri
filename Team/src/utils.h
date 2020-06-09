@@ -15,11 +15,8 @@
 #include "libbase.h"
 
 trainer crearEntrenador();
-void agregarCaracter(char** buffer, char c);
 void inicializarListas(infoInicializacion*, Estado*, Estado*, Estado*, Estado*, Estado*);
-infoInicializacion obtenerConfiguracion(FILE* configfile);
-char* vaciarBuffer (char* bufferViejo);
-void liberarBuffer (void* buffer);
+infoInicializacion obtenerConfiguracion(char*);
 void destruir_sublistas_y_sus_elementos(void* element);
 t_list* combinarListas(t_list* primeraLista, t_list* segundaLista);
 bool existeDichoEntrenador(int indice, t_list* obj, t_list* pos, t_list* posX, t_list* posY);
