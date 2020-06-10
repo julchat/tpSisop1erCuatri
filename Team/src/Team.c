@@ -21,9 +21,11 @@ t_list* mensajesGet;
 pthread_t hiloAppeared;
 pthread_t hiloLocalised;
 pthread_t hiloCaught;
-pthread_t hiloMantenimientoConexion;
 pthread_t hiloReconexion;
 bool reconectando = 0;
+sem_t* getsMandados;
+t_list* pokemonesEnMapa;
+
 
 int main(){
 	new.tipo = NEW;
@@ -31,7 +33,9 @@ int main(){
 	exec.tipo = EXEC;
 	blocked.tipo = BLOCKED;
 	term.tipo = TERM;
+	sem_init(getsMandados,0,0);
 	entrenadores = list_create();
+	pokemonesEnMapa = list_create();
 	t_log* loggerTeam;
 	infoInicializacion configuracion;
 	inicializarListas(&configuracion,&new,&ready,&exec,&blocked,&term);
@@ -113,6 +117,9 @@ void mandarGets(){
 			list_add(mensajesGet, &(pokemon));
 		}
 	}
+	for(int u = 0; u<info->configuracion.entrenadores->elements_count; u++){
+		sem_post(getsMandados);
+	}
 }
 
 t_buffer* serializarGetPokemon(Get_Pokemon pokemon){
@@ -131,23 +138,23 @@ t_buffer* serializarGetPokemon(Get_Pokemon pokemon){
 
 
 void buscarPokemones(int* id){
+	sem_wait(getsMandados);
 	infoInicializacion configuracion = info->configuracion;
 	trainer* yo = list_get(info->configuracion.entrenadores,*id);
+	sem_init(yo->permisoParaMoverme,0,0);
+	pthread_mutex_init(yo->miMutex,NULL);
 	t_list* misPokemones = yo->poseidos;
 	t_list* misObjetivos = yo->objetivos;
 	yo->identificador = *id;
 	int cantMax = misObjetivos->elements_count;
 	int cantActual = misPokemones->elements_count;
 	char* unPokemon;
-
 	nombreEstado estadoAnterior;
-	bool soyLibre;
 	bool estoyEnDeadlock = 0;
-	wait(mandarGet);
-	while(noTermine()){
+	while(!(termine(*id))){
     if(!modoDeadlock){
-    	wait(esteEsMio);
-    	if(configuracion.algoritmo=="FIFO"||"SJFSD"){
+    	sem_wait(yo->permisoParaMoverme);
+    	if(strcmp(configuracion.algoritmo,"FIFO")==0||strcmp(configuracion.algoritmo,"SJFSD")==0){
     		if(!estoyEnDeadlock){
     			switch(yo->estadoActual){
     				case 0:
@@ -158,8 +165,10 @@ void buscarPokemones(int* id){
     					yo->estadoActual = READY;
     					estadoAnterior = BLOCKED;
     					break;
+    				default:
+    				break;
     			}
-    			wait(miTurno);
+    			pthread_mutex_lock(yo->miMutex);
     			yo->estadoActual = EXEC;
     			estadoAnterior = READY;
     			meMuevo();
@@ -172,7 +181,7 @@ void buscarPokemones(int* id){
     					unPokemon = obtenerPokemon();
     					list_add(misPokemones,unPokemon);
     						if(cantActual == cantMax){
-    						if(tengoLosQueNecesito()){
+    						if(termine(*id)){
     							yo->estadoActual = TERM;
     							estadoAnterior = BLOCKED;
     							desalojoMisRecursos();
@@ -264,3 +273,23 @@ trainer decidirFIFO(){
  }
 }
 
+bool termine(int id){
+	t_list* listaEntrenadores = info->configuracion.entrenadores;
+	trainer* yo;
+	yo = list_get(listaEntrenadores, id);
+	bool encontrado = 0;
+	char* pokemonABuscar;
+	for(int i = 0; i<yo->objetivos->elements_count;i++){
+		pokemonABuscar = list_get(yo->objetivos,i);
+		for(int j = 0; i<yo->poseidos->elements_count && encontrado == 0; j++){
+			if(strcmp(pokemonABuscar,list_get(yo->poseidos,j))==0){
+				encontrado = 1;
+			}
+		}
+		if(encontrado == 0){
+			return 0;
+		}
+		encontrado = 0;
+	}
+	return 1;
+}

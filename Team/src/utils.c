@@ -12,6 +12,9 @@
 #include <pthread.h>
 #include "libbase.h"
 
+bool esPar(uint32_t numero){
+	return (numero%2)==0;
+}
 
 infoInicializacion obtenerConfiguracion(char* configpath){
 infoInicializacion inicializacion;
@@ -147,6 +150,4 @@ void destruir_sublistas_y_sus_elementos(void* element){
  }
 
 
-bool esPar(uint32_t numero){
-	return (numero%2)==0;
-}
+

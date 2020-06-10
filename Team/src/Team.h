@@ -5,6 +5,7 @@
  *      Author: utnso
  */
 #include "libbase.h"
+#include <semaphore.h>
 #ifndef TEAM_SRC_TEAM_H_
 #define TEAM_SRC_TEAM_H_
 
@@ -14,11 +15,11 @@ typedef struct{
 }t_posicion;
 
 typedef enum{
-	NEW,
-	READY,
-	EXEC,
-	BLOCKED,
-	TERM,
+	NEW = 0,
+	READY = 1,
+	EXEC = 2,
+	BLOCKED = 3,
+	TERM = 4
 }nombreEstado;
 
 typedef struct{
@@ -36,7 +37,8 @@ typedef struct
 	t_list* objetivos;
 	t_list* poseidos;
 	t_posicion posicion;
-	pthread_mutex_t miSemaforo;
+	pthread_mutex_t* miMutex;
+	sem_t* permisoParaMoverme;
 } trainer;
 
 typedef struct
@@ -65,6 +67,12 @@ typedef struct{
 }GodStruct;
 
 typedef struct{
+	char* nombre;
+	uint32_t posicionX;
+	uint32_t posicionY;
+}PokemonEnMapa;
+
+typedef struct{
 	uint32_t size_nombre;
 	char* nombre;
 }t_nombre_pokemon;
@@ -87,6 +95,10 @@ t_buffer* serializarGetPokemon(Get_Pokemon pokemon);
 
 void reconectar();
 
+void limpiarObjetivosCumplidos();
+
 void asignarObjetivosGlobales(infoInicializacion);
+
+bool termine(int);
 
 #endif /* TEAM_SRC_TEAM_H_ */

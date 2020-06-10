@@ -18,6 +18,7 @@
 #include<netdb.h>
 #include<string.h>
 #include"libbase.h"
+#include<semaphore.h>
 
 // -------------------------------------------------------------------------- Manejo de loggers y conexiones
 
