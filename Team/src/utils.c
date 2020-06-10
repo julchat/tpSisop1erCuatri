@@ -116,11 +116,6 @@ void inicializarListas(infoInicializacion* configuracion, Estado* n, Estado* r, 
 	e->entrenadores = list_create();
 	b->entrenadores = list_create();
 	t->entrenadores = list_create();
-	n->cantHilos=0;
-	r->cantHilos=0;
-	e->cantHilos= 0;
-	b->cantHilos = 0;
-	t->cantHilos = 0;
 }
 
 

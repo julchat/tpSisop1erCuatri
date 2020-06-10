@@ -146,45 +146,71 @@ void buscarPokemones(int* id){
 	t_list* misPokemones = yo->poseidos;
 	t_list* misObjetivos = yo->objetivos;
 	yo->identificador = *id;
+	yo->objetivoActual = NULL;
 	int cantMax = misObjetivos->elements_count;
 	int cantActual = misPokemones->elements_count;
 	char* unPokemon;
 	nombreEstado estadoAnterior;
 	bool estoyEnDeadlock = 0;
-	while(!(termine(*id))){
+	trainer* entrenadorProximo;
+
+	while(yo->estadoActual != TERM){
     if(!modoDeadlock){
     	sem_wait(yo->permisoParaMoverme);
     	if(strcmp(configuracion.algoritmo,"FIFO")==0||strcmp(configuracion.algoritmo,"SJFSD")==0){
     		if(!estoyEnDeadlock){
     			switch(yo->estadoActual){
     				case 0:
-    					yo->estadoActual = READY;
+    					yo->estadoActual = cambiarDesdeAEstado(NEW, READY, *id);
     					estadoAnterior = NEW;
     					break;
     				case 3:
-    					yo->estadoActual = READY;
+    					yo->estadoActual = cambiarDesdeAEstado(BLOCKED, READY, *id);
     					estadoAnterior = BLOCKED;
     					break;
     				default:
     				break;
     			}
     			pthread_mutex_lock(yo->miMutex);
-    			yo->estadoActual = EXEC;
+    			yo->estadoActual = cambiarDesdeAEstado(READY, EXEC, *id);
     			estadoAnterior = READY;
-    			meMuevo();
-    			intentoCapturar();
-    			yo->estadoActual = BLOCKED;
+
+    			while(yo->posicion.posicion_X != yo->objetivoActual->posicionX){
+    				if(yo->posicion.posicion_X < yo->objetivoActual->posicionX){
+    					sleep(info->configuracion.retardo);
+    					yo->posicion.posicion_X++;
+    				}
+    				if(yo->posicion.posicion_X > yo->objetivoActual->posicionX){
+    					sleep(info->configuracion.retardo);
+    					yo->posicion.posicion_X--;
+    				}
+    			}
+
+    			while(yo->posicion.posicion_Y != yo->objetivoActual->posicionY){
+    			    if(yo->posicion.posicion_Y < yo->objetivoActual->posicionY){
+    			    	sleep(info->configuracion.retardo);
+    			    	yo->posicion.posicion_Y++;
+    			    	}
+    			    if(yo->posicion.posicion_Y > yo->objetivoActual->posicionY){
+    			    	sleep(info->configuracion.retardo);
+    			    	yo->posicion.posicion_Y--;
+    			    	}
+    			    }
+
+    			//TODO: Mandar un catch del pokemon
+    			yo->estadoActual = cambiarDesdeAEstado(EXEC,BLOCKED, *id);
     			estadoAnterior = EXEC;
-    			replanifico(); // SIGNAL
-    			wait(mensajecaught);
+    			entrenadorProximo = obtenerSiguienteEntrenador();
+    			pthread_mutex_unlock(entrenadorProximo->miMutex);
+    			//TODO: Esperar a que me llege una respuesta del catch (un caught)
+    			//TODO: implementar verificarCatch() y obtenerPokemon()
     				if(verificarCatch()){
     					unPokemon = obtenerPokemon();
     					list_add(misPokemones,unPokemon);
     						if(cantActual == cantMax){
     						if(termine(*id)){
-    							yo->estadoActual = TERM;
     							estadoAnterior = BLOCKED;
-    							desalojoMisRecursos();
+    							yo->estadoActual = cambiarDesdeAEstado(BLOCKED, TERM, *id);
     						}else{
     							estoyEnDeadlock = 1;
     					}
@@ -193,7 +219,9 @@ void buscarPokemones(int* id){
     		}
     	}
     }
-}
+	}
+	//TODO: Implementar desalojar_entrenador(trainer*)
+	desalojar_entrenador(yo);
 }
 
 void reconectar(){
@@ -204,7 +232,7 @@ while (true){
 	socket = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
 	if(socket<0){
 		printf("error de conexion, reconectando en %d segundos", info->configuracion.contimer);
-		usleep(info->configuracion.contimer);
+		sleep(info->configuracion.contimer);
 	}else{
 		reconectando = 0;
 		exit(0);
@@ -248,7 +276,6 @@ trainer* crearYAsignarHilo(trainer* unEntrenador,int i){
 	unEntrenador->hilo = &hiloEntrenador;
 	unEntrenador->estadoActual = NEW;
 	list_add(new.entrenadores,unEntrenador);
-	new.cantHilos++;
 	return unEntrenador;
 }
 
@@ -260,12 +287,21 @@ void asignarObjetivosGlobales(infoInicializacion configuracion){
 	objetivosGlobales = list_fold(objetivosGlobales,NULL,punteroACombinarListas);
 }
 
-trainer decidirFIFO(){
+trainer* obtenerSiguienteEntrenador(){
+	trainer* sigEntr;
+	if(strcmp(info->configuracion.algoritmo,"FIFO")==0){
+		sigEntr = decidirFIFO();
+		return sigEntr;
+	}
+	return NULL;
+}
+
+trainer* decidirFIFO(){
 	trainer* aEjecutar;
  t_list* entrenadores = ready.entrenadores;
- if(ready.cantHilos !=0){
+ if(ready.entrenadores->elements_count!=0){
 	 aEjecutar = list_get(entrenadores,0);
-	 return *aEjecutar;
+	 return aEjecutar;
  }
  else{
 	 printf("no hay entrenadores para decidir cual ejecuta");
@@ -292,4 +328,58 @@ bool termine(int id){
 		encontrado = 0;
 	}
 	return 1;
+}
+
+nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoNuevo, int idEntrenador){
+	Estado* estadoPostaViejo;
+	Estado* estadoPostaNuevo;
+	trainer* unEntrenador;
+
+	switch(estadoViejo){
+	case 0:
+		estadoPostaViejo = &new;
+		break;
+	case 1:
+		estadoPostaViejo = &ready;
+		break;
+	case 2:
+		estadoPostaViejo = &exec;
+		break;
+	case 3:
+		estadoPostaViejo = &blocked;
+		break;
+	case 4:
+		estadoPostaViejo = &term;
+		break;
+
+	}
+
+	switch(estadoNuevo){
+	case 0:
+		estadoPostaNuevo = &new;
+		break;
+	case 1:
+		estadoPostaNuevo = &ready;
+		break;
+	case 2:
+		estadoPostaNuevo = &exec;
+		break;
+	case 3:
+		estadoPostaNuevo = &blocked;
+		break;
+	case 4:
+		estadoPostaNuevo = &term;
+		break;
+
+	}
+
+	for (int i = 0; i<estadoPostaViejo->entrenadores->elements_count; i++){
+		unEntrenador = list_get(estadoPostaViejo->entrenadores,i);
+		if(unEntrenador->identificador == idEntrenador){
+			list_remove(estadoPostaViejo->entrenadores,i);
+			list_add(estadoPostaNuevo->entrenadores,unEntrenador);
+			}
+	}
+
+	return estadoNuevo;
 }

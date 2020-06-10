@@ -14,6 +14,12 @@ typedef struct{
 	int posicion_Y;
 }t_posicion;
 
+typedef struct{
+	char* nombre;
+	uint32_t posicionX;
+	uint32_t posicionY;
+}PokemonEnMapa;
+
 typedef enum{
 	NEW = 0,
 	READY = 1,
@@ -26,7 +32,6 @@ typedef struct{
 	int identificadorEstado;
 	nombreEstado tipo;
 	t_list* entrenadores;
-	int cantHilos;
 }Estado;
 
 typedef struct
@@ -39,6 +44,7 @@ typedef struct
 	t_posicion posicion;
 	pthread_mutex_t* miMutex;
 	sem_t* permisoParaMoverme;
+	PokemonEnMapa* objetivoActual;
 } trainer;
 
 typedef struct
@@ -65,12 +71,6 @@ typedef struct{
 	infoInicializacion configuracion;
 	t_log* logger;
 }GodStruct;
-
-typedef struct{
-	char* nombre;
-	uint32_t posicionX;
-	uint32_t posicionY;
-}PokemonEnMapa;
 
 typedef struct{
 	uint32_t size_nombre;
@@ -100,5 +100,11 @@ void limpiarObjetivosCumplidos();
 void asignarObjetivosGlobales(infoInicializacion);
 
 bool termine(int);
+
+nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoNuevo, int idEntrenador);
+
+trainer* decidirFIFO();
+
+trainer* obtenerSiguienteEntrenador();
 
 #endif /* TEAM_SRC_TEAM_H_ */
