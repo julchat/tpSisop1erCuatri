@@ -31,14 +31,11 @@ int main(){
 	exec.tipo = EXEC;
 	blocked.tipo = BLOCKED;
 	term.tipo = TERM;
-	//FILE* configfile;
 	entrenadores = list_create();
 	t_log* loggerTeam;
-	//configfile = fopen("configFile.txt","r");
 	infoInicializacion configuracion;
 	inicializarListas(&configuracion,&new,&ready,&exec,&blocked,&term);
-	configuracion = obtenerConfiguracion("configFile.txt","r");
-	fclose(configfile);
+	configuracion = obtenerConfiguracion("configFile.txt");
 	loggerTeam = iniciar_logger_de_nivel_minimo(LOG_LEVEL_INFO, configuracion.logpath);
 	asignarObjetivosGlobales(configuracion);
 	info->logger = loggerTeam;

@@ -13,7 +13,7 @@
 #include "Team.h"
 #include <pthread.h>
 #include "libbase.h"
-
+#include "utils.c"
 trainer crearEntrenador();
 void inicializarListas(infoInicializacion*, Estado*, Estado*, Estado*, Estado*, Estado*);
 infoInicializacion obtenerConfiguracion(char*);
