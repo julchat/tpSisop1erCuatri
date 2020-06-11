@@ -6,6 +6,7 @@
 #include <commons/collections/list.h>
 
 
+
 // revisar que va en el main y que no
 
 int id_unico = 0; // ojo con esto, ¡¡¡¡capaz!!! hay que sincronizarlo, lo vamos a usar como un contador
@@ -46,6 +47,12 @@ t_log* logger = iniciar_logger_de_nivel_minimo(LOG_LEVEL_INFO,configuracion_brok
 socket_client = crear_conexion(configuracion_broker->ip_broker,configuracion_broker->puerto_broker);
 // Hay un problema de tipos con crear_conexion y lo que levantamos desde la config, IP_BROKER es un INT pero la funcion
 // lo usa como char* (lo levantamos como char*, no hay problema)
+
+// Logs hechos:
+/*1(conexion de un proceso al broker)
+ *3(llegada de un nuevo mensaje a la cola de mensajes)
+ *Faltan 2,4,5,6,7,8
+ */
 
 // -------------------------------------------- Punteros a las listas ----------------------------------------------
 

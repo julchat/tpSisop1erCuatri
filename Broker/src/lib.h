@@ -324,6 +324,8 @@ typedef struct{
 typedef struct{
 	int id_unico_mensaje; //tiene que ser UNICO
 	void *mensaje; // <------ Mensaje sin el op_code, lo cargamos desde "atender_cliente"
+	// No debería ser solo el opcode? se supone que esto es lo que define el tipo del msj
+	//(Podriamos hacer una funcion que cargue el opcode y el mensaje deserializado en un info_mensaje(??))
 	//suscriptores_mensaje_eviado* un_suscriptor;
 	//suscriptores_respondieron_ACK* un_suscriptor;
 
