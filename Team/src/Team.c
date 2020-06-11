@@ -18,13 +18,19 @@ bool modoDeadlock = 0;
 GodStruct* info;
 t_list* entrenadores;
 t_list* mensajesGet;
+t_queue* nuevosPokemones;
+t_queue* pokemonesPorAsignar;
 pthread_t hiloAppeared;
 pthread_t hiloLocalised;
 pthread_t hiloCaught;
 pthread_t hiloReconexion;
 bool reconectando = 0;
+pthread_mutex_t* syncPokemones;
 sem_t* getsMandados;
+sem_t* semNuevosPokemones;
 t_list* pokemonesEnMapa;
+int socketGlobal;
+
 
 
 int main(){
@@ -34,8 +40,11 @@ int main(){
 	blocked.tipo = BLOCKED;
 	term.tipo = TERM;
 	sem_init(getsMandados,0,0);
+	sem_init(semNuevosPokemones,0,0);
+	pthread_mutex_init(syncPokemones,0,0);
 	entrenadores = list_create();
 	pokemonesEnMapa = list_create();
+	nuevosPokemones = queue_create();
 	t_log* loggerTeam;
 	infoInicializacion configuracion;
 	inicializarListas(&configuracion,&new,&ready,&exec,&blocked,&term);
@@ -156,6 +165,7 @@ void buscarPokemones(int* id){
 
 	while(yo->estadoActual != TERM){
     if(!modoDeadlock){
+    	yo->estoyLibre = 1;
     	sem_wait(yo->permisoParaMoverme);
     	if(strcmp(configuracion.algoritmo,"FIFO")==0||strcmp(configuracion.algoritmo,"SJFSD")==0){
     		if(!estoyEnDeadlock){
@@ -240,6 +250,61 @@ while (true){
 }
 }
 
+void planificadorAReady(){
+	PokemonEnMapa* pokemonNuevo;
+	PokemonEnMapa* pokemonPorAsignar;
+	pokemonesPorAsignar = queue_create();
+	while(!(list_is_empty(objetivosGlobales))){
+		sem_wait(semNuevosPokemones);
+		pthread_mutex_lock(syncPokemones);
+		pokemonNuevo = queue_pop(nuevosPokemones);
+		pthread_mutex_unlock(syncPokemones);
+		queue_push(pokemonesPorAsignar,pokemonNuevo);
+		if(hayEntrenadoresLibres()){
+			for(int i = 0; i<queue_size(pokemonesPorAsignar); i++){
+				pokemonPorAsignar = queue_pop(pokemonesPorAsignar);
+				asignarPokemonAMejorEntrenador(pokemonPorAsignar);
+			}
+		}
+
+	}
+}
+
+void asignarPokemonAMejorEntrenador(PokemonEnMapa* pokemon){
+	t_list* entrenadores = info->configuracion.entrenadores;
+	t_list* entrenadoresLibres;
+	trainer* mejorEntrenador;
+	entrenadoresLibres = list_filter(entrenadores,estaLibre);
+	mejorEntrenador = list_get(entrenadoresLibres,0);
+	for(int i = 1; i<entrenadoresLibres->elements_count;i++){
+		mejorEntrenador = entrenadorMasCercano(mejorEntrenador, list_get(entrenadoresLibres,i), pokemon);
+	}
+	list_destroy(entrenadoresLibres);
+	mejorEntrenador->estoyLibre = 0;
+	mejorEntrenador->objetivoActual = pokemon;
+	sem_post(mejorEntrenador->permisoParaMoverme);
+}
+
+trainer* entrenadorMasCercano(trainer* entrenadorA, trainer* entrenadorB, PokemonEnMapa* pokemon){
+	uint32_t distanciaA;
+	uint32_t distanciaB;
+	distanciaA = valorAbsoluto(entrenadorA->posicion.posicion_X - pokemon->posicionX) +
+			valorAbsoluto(entrenadorA->posicion.posicion_Y - pokemon->posicionY);
+	distanciaB = valorAbsoluto(entrenadorB->posicion.posicion_X - pokemon->posicionX) +
+			valorAbsoluto(entrenadorB->posicion.posicion_Y - pokemon->posicionY);
+
+	return distanciaA<=distanciaB?entrenadorA:entrenadorB;
+	}
+
+uint32_t valorAbsoluto(uint32_t numero){
+	return numero<=0?numero*(-1):numero;
+}
+
+bool estaLibre(trainer* unEntrenador){
+	return unEntrenador->estoyLibre;
+}
+
+
 t_list* armarEntrenadores(infoInicializacion configuracion){
 	t_list* entrenadores = list_create();
 	t_list* objetivosTodos = configuracion.objetivos;
@@ -261,6 +326,7 @@ t_list* armarEntrenadores(infoInicializacion configuracion){
 		unEntrenador->posicion = *unaPosicion;
 		unEntrenador->objetivos = list_get(objetivosTodos,i);
 		unEntrenador->poseidos = list_get(poseidosTodos,i);
+		unEntrenador->estoyLibre = 0;
 		unEntrenador = crearYAsignarHilo(unEntrenador,i);
 		list_add(entrenadores,unEntrenador);
 	}

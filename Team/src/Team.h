@@ -6,6 +6,7 @@
  */
 #include "libbase.h"
 #include <semaphore.h>
+#include "commons/collections/queue.h"
 #ifndef TEAM_SRC_TEAM_H_
 #define TEAM_SRC_TEAM_H_
 
@@ -36,6 +37,7 @@ typedef struct{
 
 typedef struct
 {
+	bool estoyLibre;
 	int identificador;
 	nombreEstado estadoActual;
 	pthread_t* hilo;
@@ -106,5 +108,15 @@ nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoN
 trainer* decidirFIFO();
 
 trainer* obtenerSiguienteEntrenador();
+
+void planificadorAReady();
+
+void asignarPokemonAMejorEntrenador(PokemonEnMapa* pokemon);
+
+trainer* entrenadorMasCercano(trainer* entrenadorA, trainer* entrenadorB, PokemonEnMapa* pokemon);
+
+uint32_t valorAbsoluto(uint32_t numero);
+
+bool estaLibre(trainer* unEntrenador);
 
 #endif /* TEAM_SRC_TEAM_H_ */
