@@ -46,6 +46,7 @@ typedef struct
 	t_posicion posicion;
 	pthread_mutex_t* miMutex;
 	sem_t* permisoParaMoverme;
+	sem_t* pokemonAtrapadoSatisfactoriamente;
 	PokemonEnMapa* objetivoActual;
 } trainer;
 
@@ -84,6 +85,18 @@ typedef struct{
 	uint32_t id_mensaje;
 }Get_Pokemon;
 
+typedef struct{
+	t_nombre_pokemon nombre;
+	t_posicion posicion;
+	uint32_t id_mensaje;
+}Catch_Pokemon;
+
+typedef struct{
+	t_nombre_pokemon nombre;
+	t_posicion posicion;
+}Localised_Pokemon;
+
+
 
 t_list* armarEntrenadores(infoInicializacion);
 
@@ -118,5 +131,9 @@ trainer* entrenadorMasCercano(trainer* entrenadorA, trainer* entrenadorB, Pokemo
 uint32_t valorAbsoluto(uint32_t numero);
 
 bool estaLibre(trainer* unEntrenador);
+
+bool hayEntrenadoresLibres();
+
+t_buffer* serializarCatchPokemon(Catch_Pokemon pokemon);
 
 #endif /* TEAM_SRC_TEAM_H_ */

@@ -18,6 +18,7 @@ bool modoDeadlock = 0;
 GodStruct* info;
 t_list* entrenadores;
 t_list* mensajesGet;
+t_list* mensajesCatch;
 t_queue* nuevosPokemones;
 t_queue* pokemonesPorAsignar;
 pthread_t hiloAppeared;
@@ -26,6 +27,8 @@ pthread_t hiloCaught;
 pthread_t hiloReconexion;
 bool reconectando = 0;
 pthread_mutex_t* syncPokemones;
+pthread_mutex_t* mutexSocketGlobal;
+pthread_mutex_t* mutexListaCatch;
 sem_t* getsMandados;
 sem_t* semNuevosPokemones;
 t_list* pokemonesEnMapa;
@@ -41,7 +44,9 @@ int main(){
 	term.tipo = TERM;
 	sem_init(getsMandados,0,0);
 	sem_init(semNuevosPokemones,0,0);
-	pthread_mutex_init(syncPokemones,0,0);
+	pthread_mutex_init(syncPokemones,NULL);
+	pthread_mutex_init(mutexSocketGlobal,NULL);
+	pthread_mutex_init(mutexListaCatch,NULL);
 	entrenadores = list_create();
 	pokemonesEnMapa = list_create();
 	nuevosPokemones = queue_create();
@@ -124,6 +129,7 @@ void mandarGets(){
 
 			recv(socket, &(pokemon.id_mensaje), sizeof(uint32_t) , 0);
 			list_add(mensajesGet, &(pokemon));
+			liberar_conexion(socket);
 		}
 	}
 	for(int u = 0; u<info->configuracion.entrenadores->elements_count; u++){
@@ -145,12 +151,31 @@ t_buffer* serializarGetPokemon(Get_Pokemon pokemon){
 	return buffer;
 }
 
+t_buffer* serializarCatchPokemon(Catch_Pokemon pokemon){
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = pokemon.nombre.size_nombre + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t);
+	void* stream = malloc(buffer->size);
+	int offset = 0;
+	memcpy(stream + offset, &pokemon.nombre.size_nombre, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(stream + offset, pokemon.nombre.nombre, strlen(pokemon.nombre.nombre)+1);
+	offset = offset + strlen(pokemon.nombre.nombre)+1;
+	memcpy(stream + offset, &pokemon.posicion.posicion_X, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+	memcpy(stream + offset, &pokemon.posicion.posicion_Y, sizeof(uint32_t));
+	offset = offset + sizeof(uint32_t);
+
+	buffer->stream= stream;
+	return buffer;
+}
+
 
 void buscarPokemones(int* id){
 	sem_wait(getsMandados);
 	infoInicializacion configuracion = info->configuracion;
 	trainer* yo = list_get(info->configuracion.entrenadores,*id);
 	sem_init(yo->permisoParaMoverme,0,0);
+	sem_init(yo->pokemonAtrapadoSatisfactoriamente,0,0);
 	pthread_mutex_init(yo->miMutex,NULL);
 	t_list* misPokemones = yo->poseidos;
 	t_list* misObjetivos = yo->objetivos;
@@ -158,10 +183,59 @@ void buscarPokemones(int* id){
 	yo->objetivoActual = NULL;
 	int cantMax = misObjetivos->elements_count;
 	int cantActual = misPokemones->elements_count;
-	char* unPokemon;
 	nombreEstado estadoAnterior;
 	bool estoyEnDeadlock = 0;
 	trainer* entrenadorProximo;
+
+
+	void catchPokemon(PokemonEnMapa* pokemonACapturar){
+		mensajesCatch = list_create();
+		t_paquete* paquete = malloc(sizeof(t_paquete));
+		t_buffer* buffer;
+		Catch_Pokemon pokemon;
+			if(socketGlobal < 0){
+				printf("error de conexion, reconectando en %d segundos", info->configuracion.contimer);
+				if(!(reconectando)){
+					reconectando = 1;
+					pthread_create(&hiloReconexion,NULL,reconectar,NULL);
+				}
+				sem_post(yo->pokemonAtrapadoSatisfactoriamente);
+			}
+			else{
+				pthread_mutex_lock(mutexSocketGlobal);
+
+				pokemon.nombre.nombre = pokemonACapturar->nombre;
+				pokemon.nombre.size_nombre = strlen(pokemon.nombre.nombre) + 1;
+				pokemon.posicion.posicion_X = pokemonACapturar->posicionX;
+				pokemon.posicion.posicion_Y = pokemonACapturar->posicionY;
+				buffer = serializarCatchPokemon(pokemon);
+
+				paquete->codigo_operacion = 6;
+				paquete->buffer = buffer;
+
+				void* a_enviar = malloc(sizeof(uint8_t) + sizeof(uint32_t) + buffer->size );
+				int offset = 0;
+				memcpy(a_enviar + offset, &(paquete->codigo_operacion), sizeof(uint8_t));
+				offset = offset + sizeof(uint8_t);
+				memcpy(a_enviar + offset, &(paquete->buffer->size), sizeof(uint32_t));
+				offset = offset + sizeof(uint32_t);
+				memcpy(a_enviar + offset, paquete->buffer->stream, buffer->size);
+				offset = offset + buffer->size;
+
+				send(socket, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t), 0);
+				free(a_enviar);
+				free(paquete->buffer->stream);
+				free(paquete->buffer);
+				free(paquete);
+
+				recv(socket, &(pokemon.id_mensaje), sizeof(uint32_t) , 0);
+
+				pthread_mutex_unlock(mutexSocketGlobal);
+				pthread_mutex_lock(mutexListaCatch);
+				list_add(mensajesCatch, &(pokemon));
+				pthread_mutex_unlock(mutexListaCatch);
+			}
+		}
 
 	while(yo->estadoActual != TERM){
     if(!modoDeadlock){
@@ -207,16 +281,13 @@ void buscarPokemones(int* id){
     			    	}
     			    }
 
-    			//TODO: Mandar un catch del pokemon
+    			catchPokemon(yo->objetivoActual);
     			yo->estadoActual = cambiarDesdeAEstado(EXEC,BLOCKED, *id);
     			estadoAnterior = EXEC;
     			entrenadorProximo = obtenerSiguienteEntrenador();
     			pthread_mutex_unlock(entrenadorProximo->miMutex);
-    			//TODO: Esperar a que me llege una respuesta del catch (un caught)
-    			//TODO: implementar verificarCatch() y obtenerPokemon()
-    				if(verificarCatch()){
-    					unPokemon = obtenerPokemon();
-    					list_add(misPokemones,unPokemon);
+    				sem_wait(yo->pokemonAtrapadoSatisfactoriamente);
+    					list_add(misPokemones, yo->objetivoActual->nombre);
     						if(cantActual == cantMax){
     						if(termine(*id)){
     							estadoAnterior = BLOCKED;
@@ -229,10 +300,12 @@ void buscarPokemones(int* id){
     		}
     	}
     }
-	}
 	//TODO: Implementar desalojar_entrenador(trainer*)
 	desalojar_entrenador(yo);
-}
+	}
+
+
+
 
 void reconectar(){
 usleep(info->configuracion.contimer);
@@ -245,6 +318,7 @@ while (true){
 		sleep(info->configuracion.contimer);
 	}else{
 		reconectando = 0;
+		socketGlobal = socket;
 		exit(0);
 		}
 }
@@ -360,6 +434,13 @@ trainer* obtenerSiguienteEntrenador(){
 		return sigEntr;
 	}
 	return NULL;
+}
+
+bool hayEntrenadoresLibres(){
+	t_list* entrenadores = info->configuracion.entrenadores;
+	t_list* entrenadoresLibres;
+	entrenadoresLibres = list_filter(entrenadores,estaLibre);
+	return !(list_is_empty(entrenadoresLibres));
 }
 
 trainer* decidirFIFO(){
