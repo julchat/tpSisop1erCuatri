@@ -9,6 +9,8 @@
 #include "commons/collections/list.h"
 #include <string.h>
 t_list* objetivosGlobales;
+t_list* pokemonesCapturados;
+t_list* pokemonesObtenidos;
 Estado new;
 Estado ready;
 Estado exec;
@@ -49,6 +51,7 @@ int main(){
 	pthread_mutex_init(mutexListaCatch,NULL);
 	entrenadores = list_create();
 	pokemonesEnMapa = list_create();
+	pokemonesCapturados = list_create();
 	nuevosPokemones = queue_create();
 	t_log* loggerTeam;
 	infoInicializacion configuracion;
@@ -62,6 +65,7 @@ int main(){
 	info->configuracion.entrenadores = entrenadores;
 	configuracion.entrenadores = entrenadores;
 	limpiarObjetivosCumplidos();
+	mandarGets();
 }
 
 void limpiarObjetivosCumplidos(){
@@ -86,6 +90,7 @@ void limpiarObjetivosCumplidos(){
 			}
 		}
 	}
+	pokemonesObtenidos = list_duplicate(poseidosAplanados);
 	list_destroy_and_destroy_elements(poseidosAplanados,punteroAFree);
 }
 
@@ -98,7 +103,7 @@ void mandarGets(){
 	for(int i=0;i<objetivosGlobales->elements_count;i++){
 		socket = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
 		if(socket < 0){
-			printf("error de conexion, reconectando en %d segundos", info->configuracion.contimer);
+			log_error(info->logger, "Ha fallado la conexion con el broker, por comportamiento default no hay instancias para el pokemon %s ", list_get(objetivosGlobales,i));
 			if(!(reconectando)){
 				reconectando = 1;
 				pthread_create(&hiloReconexion,NULL,reconectar,NULL);
@@ -194,7 +199,8 @@ void buscarPokemones(int* id){
 		t_buffer* buffer;
 		Catch_Pokemon pokemon;
 			if(socketGlobal < 0){
-				printf("error de conexion, reconectando en %d segundos", info->configuracion.contimer);
+				log_error(info->logger, "Ha fallado la conexion con el broker, por comportamiento default el pokemon %s %d %d sera capturado ",
+						pokemonACapturar->nombre, pokemonACapturar->posicionX, pokemonACapturar->posicionY);
 				if(!(reconectando)){
 					reconectando = 1;
 					pthread_create(&hiloReconexion,NULL,reconectar,NULL);
@@ -245,28 +251,30 @@ void buscarPokemones(int* id){
     		if(!estoyEnDeadlock){
     			switch(yo->estadoActual){
     				case 0:
-    					yo->estadoActual = cambiarDesdeAEstado(NEW, READY, *id);
+    					yo->estadoActual = cambiarDesdeAEstado(NEW, READY, *id, "Entrenador %d pasa de NEW a READY porque fue elegido para atrapar a un pokemon");
     					estadoAnterior = NEW;
     					break;
     				case 3:
-    					yo->estadoActual = cambiarDesdeAEstado(BLOCKED, READY, *id);
+    					yo->estadoActual = cambiarDesdeAEstado(BLOCKED, READY, *id, "Entrenador libre %d pasa de BLOCKED a READY porque fue elegido para atrapar a un pokemon");
     					estadoAnterior = BLOCKED;
     					break;
     				default:
     				break;
     			}
     			pthread_mutex_lock(yo->miMutex);
-    			yo->estadoActual = cambiarDesdeAEstado(READY, EXEC, *id);
+    			yo->estadoActual = cambiarDesdeAEstado(READY, EXEC, *id, "Entrenador %d fue elegido por el algoritmo de planificacion para ejecutar");
     			estadoAnterior = READY;
 
     			while(yo->posicion.posicion_X != yo->objetivoActual->posicionX){
     				if(yo->posicion.posicion_X < yo->objetivoActual->posicionX){
     					sleep(info->configuracion.retardo);
     					yo->posicion.posicion_X++;
+    					log_info(info->logger, "Entrenador %d se movio hacia %d %d ", yo->identificador, yo->posicion.posicion_X, yo->posicion.posicion_Y);
     				}
     				if(yo->posicion.posicion_X > yo->objetivoActual->posicionX){
     					sleep(info->configuracion.retardo);
     					yo->posicion.posicion_X--;
+    					log_info(info->logger, "Entrenador %d se movio hacia %d %d ", yo->identificador, yo->posicion.posicion_X, yo->posicion.posicion_Y);
     				}
     			}
 
@@ -274,24 +282,30 @@ void buscarPokemones(int* id){
     			    if(yo->posicion.posicion_Y < yo->objetivoActual->posicionY){
     			    	sleep(info->configuracion.retardo);
     			    	yo->posicion.posicion_Y++;
+    					log_info(info->logger, "Entrenador %d se movio hacia %d %d ", yo->identificador, yo->posicion.posicion_X, yo->posicion.posicion_Y);
     			    	}
     			    if(yo->posicion.posicion_Y > yo->objetivoActual->posicionY){
     			    	sleep(info->configuracion.retardo);
     			    	yo->posicion.posicion_Y--;
+    					log_info(info->logger, "Entrenador %d se movio hacia %d %d ", yo->identificador, yo->posicion.posicion_X, yo->posicion.posicion_Y);
     			    	}
     			    }
 
     			catchPokemon(yo->objetivoActual);
-    			yo->estadoActual = cambiarDesdeAEstado(EXEC,BLOCKED, *id);
+    			log_info(info->logger, "Entrenador %d intenta capturar en %d %d al pokemon %s", yo->identificador,
+    					yo->objetivoActual->posicionX, yo->objetivoActual->posicionY, yo->objetivoActual->nombre);
+    			yo->estadoActual = cambiarDesdeAEstado(EXEC,BLOCKED, *id, "Entrenador %d es bloqueado a espera de conseguir el pokemon capturado");
     			estadoAnterior = EXEC;
     			entrenadorProximo = obtenerSiguienteEntrenador();
     			pthread_mutex_unlock(entrenadorProximo->miMutex);
     				sem_wait(yo->pokemonAtrapadoSatisfactoriamente);
     					list_add(misPokemones, yo->objetivoActual->nombre);
+    					list_add(pokemonesCapturados, yo->objetivoActual);
+    					list_add(pokemonesObtenidos, yo->objetivoActual);
     						if(cantActual == cantMax){
     						if(termine(*id)){
     							estadoAnterior = BLOCKED;
-    							yo->estadoActual = cambiarDesdeAEstado(BLOCKED, TERM, *id);
+    							yo->estadoActual = cambiarDesdeAEstado(BLOCKED, TERM, *id, "Entrenador %d consiguio los pokemones que buscaba");
     						}else{
     							estoyEnDeadlock = 1;
     					}
@@ -300,25 +314,29 @@ void buscarPokemones(int* id){
     		}
     	}
     }
-	//TODO: Implementar desalojar_entrenador(trainer*)
-	desalojar_entrenador(yo);
+	list_destroy(yo->poseidos);
+	list_destroy(yo->objetivos);
+	list_destroy(misPokemones);
+	list_destroy(misObjetivos);
 	}
 
 
 
 
 void reconectar(){
+log_error("error al conectar con el broker, reintentando en %d segundos", info->configuracion.contimer);
 usleep(info->configuracion.contimer);
 int socket;
 while (true){
 
 	socket = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
 	if(socket<0){
-		printf("error de conexion, reconectando en %d segundos", info->configuracion.contimer);
+		log_error("error al reconectar con el broker, reintentando en %d segundos", info->configuracion.contimer);
 		sleep(info->configuracion.contimer);
 	}else{
 		reconectando = 0;
 		socketGlobal = socket;
+		log_info(info->logger,"reconexion con el broker con exito");
 		exit(0);
 		}
 }
@@ -477,7 +495,7 @@ bool termine(int id){
 	return 1;
 }
 
-nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoNuevo, int idEntrenador){
+nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoNuevo, int idEntrenador, char* mensaje){
 	Estado* estadoPostaViejo;
 	Estado* estadoPostaNuevo;
 	trainer* unEntrenador;
@@ -525,6 +543,7 @@ nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoN
 		if(unEntrenador->identificador == idEntrenador){
 			list_remove(estadoPostaViejo->entrenadores,i);
 			list_add(estadoPostaNuevo->entrenadores,unEntrenador);
+			log_info(info->logger, mensaje, idEntrenador);
 			}
 	}
 

@@ -55,7 +55,6 @@ typedef struct
 	t_list* posicionesX;
 	t_list* posicionesY;
 	t_list* poseidos;
-	t_list* poseidosAplanados;
 	t_list* objetivos;
 	t_list* entrenadores;
 	int contimer;
