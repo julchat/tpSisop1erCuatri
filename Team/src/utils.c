@@ -12,7 +12,6 @@
 #include <pthread.h>
 #include "libbase.h"
 
-
 infoInicializacion obtenerConfiguracion(char* configpath){
 infoInicializacion inicializacion;
 t_config* configuracion = config_create(configpath);
@@ -141,7 +140,7 @@ void destruir_sublistas_y_sus_elementos(void* element){
  return primeraLista;
  }
 
- bool esPar(int numero){
+ bool esNumeroPar(int numero){
  	return (numero%2)==0;
  }
 

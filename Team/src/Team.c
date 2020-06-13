@@ -228,13 +228,13 @@ void buscarPokemones(int* id){
 				memcpy(a_enviar + offset, paquete->buffer->stream, buffer->size);
 				offset = offset + buffer->size;
 
-				send(socket, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t), 0);
+				send(socketGlobal, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t), 0);
 				free(a_enviar);
 				free(paquete->buffer->stream);
 				free(paquete->buffer);
 				free(paquete);
 
-				recv(socket, &(pokemon.id_mensaje), sizeof(uint32_t) , 0);
+				recv(socketGlobal, &(pokemon.id_mensaje), sizeof(uint32_t) , 0);
 
 				pthread_mutex_unlock(mutexSocketGlobal);
 				pthread_mutex_lock(mutexListaCatch);
@@ -324,14 +324,14 @@ void buscarPokemones(int* id){
 
 
 void reconectar(){
-log_error("error al conectar con el broker, reintentando en %d segundos", info->configuracion.contimer);
+log_error(info->logger, "error al conectar con el broker, reintentando en %d segundos", info->configuracion.contimer);
 usleep(info->configuracion.contimer);
 int socket;
 while (true){
 
 	socket = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
 	if(socket<0){
-		log_error("error al reconectar con el broker, reintentando en %d segundos", info->configuracion.contimer);
+		log_error(info->logger, "error al reconectar con el broker, reintentando en %d segundos", info->configuracion.contimer);
 		sleep(info->configuracion.contimer);
 	}else{
 		reconectando = 0;

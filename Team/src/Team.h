@@ -115,7 +115,7 @@ void asignarObjetivosGlobales(infoInicializacion);
 
 bool termine(int);
 
-nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoNuevo, int idEntrenador);
+nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoNuevo, int idEntrenador, char* mensajeCambio);
 
 trainer* decidirFIFO();
 
@@ -132,6 +132,8 @@ uint32_t valorAbsoluto(uint32_t numero);
 bool estaLibre(trainer* unEntrenador);
 
 bool hayEntrenadoresLibres();
+
+void mandarGets();
 
 t_buffer* serializarCatchPokemon(Catch_Pokemon pokemon);
 
