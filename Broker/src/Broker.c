@@ -7,7 +7,7 @@
 
 
 
-// revisar que va en el main y que no
+// revisar que va en el main y que no !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 int id_unico = 0; // ojo con esto, ¡¡¡¡capaz!!! hay que sincronizarlo, lo vamos a usar como un contador
 
@@ -25,7 +25,6 @@ administrador_mensajes* cola_mensajes_catch = NULL;
 administrador_mensajes* cola_mensajes_caught = NULL;
 
 
-//Bloque memoria -> para los mensajes (malloquear lo que dice el config que nos dan) FALTA!!!!!!!!!!!!!!!!!!!!!!
 
 // --------------------------------- Levantando la configuración ---------------------------------------------------
 
@@ -53,6 +52,12 @@ socket_client = crear_conexion(configuracion_broker->ip_broker,configuracion_bro
  *3(llegada de un nuevo mensaje a la cola de mensajes)
  *Faltan 2,4,5,6,7,8
  */
+
+// --------------------------------------------------- Memoria -----------------------------------------------------
+
+void* memoria_broker = malloc(configuracion_broker->tamano_memoria);
+void* siguiente_posicion_libre = memoria_broker;
+
 
 // -------------------------------------------- Punteros a las listas ----------------------------------------------
 
@@ -94,37 +99,43 @@ void atender_cliente(int socket_cliente){
 
 	switch(paquete->codigo_operacion){
 		case 2: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
-				encolar_mensaje(cola_mensajes_new,mensaje_new);
+				cargar_new_en_memoria(mensaje_new);
+				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes New_Pokemon");
 				free(mensaje_new);
 				break;
 
 		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer); //Falta hacer esta funcion con el tema de los vectores :C
-				encolar_mensaje(cola_mensajes_localized,mensaje_localized);
+				cargar_localized_en_memoria(mensaje_localized);
+				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Localized_Pokemon");
 				free(mensaje_localized);
 			    break;
 
 		case 4: Get_Pokemon* mensaje_get = deserializar_get_pokemon(paquete->buffer);
-				encolar_mensaje(cola_mensajes_get,mensaje_get);
+				cargar_get_en_memoria(mensaje_get);
+				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Get_Pokemon");
 				free(mensaje_get);
 				break;
 
 		case 5: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
-				encolar_mensaje(cola_mensajes_appeared,mensaje_appeared);
+				cargar_appeared_en_memoria(mensaje_appeared);
+				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Appeared_Pokemon");
 				free(mensaje_appeared);
 				break;
 
 		case 6: Catch_Pokemon* mensaje_catch = deserializar_catch_pokemon(paquete->buffer);
-				encolar_mensaje(cola_mensajes_catch,mensaje_catch);
+				cargar_catch_en_memoria(mensaje_catch);
+				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Catch_Pokemon");
 				free(mensaje_catch);
 				break;
 
 		case 7: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
-				encolar_mensaje(cola_mensajes_caught,mensaje_caught);
+				cargar_caught_en_memoria(mensaje_caught);
+				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Caught_Pokemon");
 				free(mensaje_caught);
 				break;
@@ -135,7 +146,91 @@ void atender_cliente(int socket_cliente){
 }
 
 
-//----------------------------------------------Manejo de colas(que son listas, shh nadie lo sabe)----------------------------------------
+//----------------------------------------------Cargar mensajes en memoria----------------------------------------------------------------
+
+  void cargar_new_en_memoria(New_Pokemon new_pokemon){
+
+	  	memcpy(siguiente_posicion_libre,new_pokemon->nombre->size_nombre,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+	  	memcpy(siguiente_posicion_libre,new_pokemon->nombre->nombre,new_pokemon->nombre->size_nombre);
+	  	siguiente_posicion_libre += new_pokemon->nombre->size_nombre;
+	  	memcpy(siguiente_posicion_libre,new_pokemon->posicion->posicion_X,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+	  	memcpy(siguiente_posicion_libre,new_pokemon->posicion->posicion_Y,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+	  	memcpy(siguiente_posicion_libre,new_pokemon->cantidad,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+
+  }
+
+
+  void cargar_localized_en_memoria(Localized_Pokemon localized_pokemon){
+
+  	  	memcpy(siguiente_posicion_libre,localized_pokemon->nombre->size_nombre,sizeof(uint32_t));
+  	  	siguiente_posicion_libre += sizeof(uint32_t);
+  	  	memcpy(siguiente_posicion_libre,localized_pokemon->nombre->nombre,localized_pokemon->nombre->size_nombre);
+  	  	siguiente_posicion_libre += localized_pokemon->nombre->size_nombre;
+  	  	memcpy(siguiente_posicion_libre,localized_pokemon->cantidad_coordenadas,sizeof(uint32_t));
+  	  	siguiente_posicion_libre += sizeof(uint32_t);
+
+  	  	for(int i; i<localized_pokemon->cantidad_coordenadas; i++){
+
+  			  memcpy(siguiente_posicion_libre,localized_pokemon->posiciones[i]->posicion_X,sizeof(uint32_t));
+  			  siguiente_posicion_libre += sizeof(uint32_t);
+  			  memcpy(siguiente_posicion_libre,localized_pokemon->posiciones[i]->posicion_Y,sizeof(uint32_t));
+  			  siguiente_posicion_libre += sizeof(uint32_t);
+
+  }
+
+
+  void cargar_get_en_memoria(Get_Pokemon get_pokemon){
+
+  	 	memcpy(siguiente_posicion_libre,get_pokemon->nombre->size_nombre,sizeof(uint32_t));
+  	 	siguiente_posicion_libre += sizeof(uint32_t);
+  		memcpy(siguiente_posicion_libre,get_pokemon->nombre->nombre,get_pokemon->nombre->size_nombre);
+  		siguiente_posicion_libre += get_pokemon->nombre->size_nombre;
+
+  }
+
+
+  void cargar_appeared_en_memoria(Appeared_Pokemon appeared_pokemon){
+
+	    memcpy(siguiente_posicion_libre,appeared_pokemon->nombre->size_nombre,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+	  	memcpy(siguiente_posicion_libre,appeared_pokemon->nombre->nombre,appeared_pokemon->nombre->size_nombre);
+	  	siguiente_posicion_libre += appeared_pokemon->nombre->size_nombre;
+	  	memcpy(siguiente_posicion_libre,appeared_pokemon->posicion->posicion_X,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+	  	memcpy(siguiente_posicion_libre,appeared_pokemon->posicion->posicion_Y,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+  }
+
+
+  void cargar_catch_en_memoria(Catch_Pokemon catch_pokemon){
+
+	    memcpy(siguiente_posicion_libre,catch_pokemon->nombre->size_nombre,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+	  	memcpy(siguiente_posicion_libre,catch_pokemon->nombre->nombre,catch_pokemon->nombre->size_nombre);
+	  	siguiente_posicion_libre += catch_pokemon->nombre->size_nombre;
+	  	memcpy(siguiente_posicion_libre,catch_pokemon->posicion->posicion_X,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+	  	memcpy(siguiente_posicion_libre,catch_pokemon->posicion->posicion_Y,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+  }
+
+
+  void cargar_caught_en_memoria(Caught_Pokemon caught_pokemon){
+
+	    memcpy(siguiente_posicion_libre,caught_pokemon->valor,sizeof(uint32_t));
+	  	siguiente_posicion_libre += sizeof(uint32_t);
+
+  }
+
+
+
+
+  //----------------------------------------------Manejo de colas(que son listas, shh nadie lo sabe)----------------------------------------
+
 
   /* Se encarga de meter los mensajes (la estructura administrador_mensaje) a la lista, tambien es el que
    * genera y setea los id_unico de cada mensaje
