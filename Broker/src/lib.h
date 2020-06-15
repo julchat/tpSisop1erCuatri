@@ -379,23 +379,23 @@ void* deserializar_new_pokemon(t_buffer* buffer){
 	 return get_pokemon;
  }
 
- void* deserializar_appeared_pokemon(t_buffer* buffer){
+ Appeared_Pokemon* deserializar_appeared_pokemon(t_buffer* buffer){
 
-	 Appeared_Pokemon appeared_pokemon = malloc(sizeof(Appeared_Pokemon));
+ 	 Appeared_Pokemon* appeared_pokemon = malloc(sizeof(Appeared_Pokemon));
 
-	 void* stream = buffer->stream;
+ 	 void* stream = buffer->stream;
 
-	 memcpy(&(appeared_pokemon->nombre->size_nombre),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
-	 appeared_pokemon->nombre->nombre = malloc(appeared_pokemon->nombre->size_nombre);
-	 memcpy(&(appeared_pokemon->nombre->nombre),stream,appeared_pokemon->nombre->size_nombre);
-	 stream += appeared_pokemon->nombre->size_nombre;
-	 memcpy(&(appeared_pokemon->posicion->posicion_X),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
-	 memcpy(&(appeared_pokemon->posicion->posicion_Y),stream,sizeof(uint32_t));
-	 stream += sizeof(uint32_t);
+ 	 memcpy(&(appeared_pokemon->nombre.size_nombre),stream,sizeof(uint32_t));
+ 	 stream += sizeof(uint32_t);
+ 	 appeared_pokemon->nombre.nombre = malloc(appeared_pokemon->nombre->size_nombre);
+ 	 memcpy(appeared_pokemon->nombre.nombre,stream,appeared_pokemon->nombre->size_nombre);
+ 	 stream += appeared_pokemon->nombre.size_nombre;
+ 	 memcpy(&(appeared_pokemon->posicion.posicion_X),stream,sizeof(uint32_t));
+ 	 stream += sizeof(uint32_t);
+ 	 memcpy(&(appeared_pokemon->posicion.posicion_Y),stream,sizeof(uint32_t));
+ 	 stream += sizeof(uint32_t);
 
-	 return appeared_pokemon;
+ 	 return appeared_pokemon;
  }
 
   void* deserializar_catch_pokemon(t_buffer* buffer){
