@@ -16,9 +16,15 @@ typedef struct{
 }t_posicion;
 
 typedef struct{
+	uint32_t posicionX;
+	uint32_t posicionY;
+}t_posicion32;
+
+typedef struct{
 	char* nombre;
 	uint32_t posicionX;
 	uint32_t posicionY;
+	bool atrapadoConExito;
 }PokemonEnMapa;
 
 typedef enum{
@@ -92,8 +98,8 @@ typedef struct{
 
 typedef struct{
 	t_nombre_pokemon nombre;
-	t_posicion posicion;
-}Localised_Pokemon;
+	t_posicion32 posicion;
+}Appeared_Pokemon;
 
 
 

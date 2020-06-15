@@ -134,3 +134,22 @@ char* recibir_mensaje(int socket_cliente){
 	return buffer;
 }
 
+
+Appeared_Pokemon* deserializar_appeared_pokemon(t_buffer* buffer){
+
+	 Appeared_Pokemon* appeared_pokemon = malloc(sizeof(Appeared_Pokemon));
+
+	 void* stream = buffer->stream;
+
+	 memcpy(&(appeared_pokemon->nombre.size_nombre),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+	 appeared_pokemon->nombre.nombre = malloc(appeared_pokemon->nombre->size_nombre);
+	 memcpy(appeared_pokemon->nombre.nombre,stream,appeared_pokemon->nombre->size_nombre);
+	 stream += appeared_pokemon->nombre.size_nombre;
+	 memcpy(&(appeared_pokemon->posicion.posicionX),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+	 memcpy(&(appeared_pokemon->posicion.posicionY),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
+
+	 return appeared_pokemon;
+}

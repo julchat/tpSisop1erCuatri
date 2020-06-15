@@ -342,7 +342,7 @@ typedef struct{
 // ----------------------------- Deserializadores (esa palabra si quiera existe?) ---------------------------------------
 
 
-void* deserializar_new_pokemon(t_buffer buffer){
+void* deserializar_new_pokemon(t_buffer* buffer){
 
 	New_Pokemon new_pokemon = malloc(sizeof(New_Pokemon));
 
@@ -364,7 +364,7 @@ void* deserializar_new_pokemon(t_buffer buffer){
 
 }
 
- void* deserializar_get_pokemon(t_buffer buffer){
+ void* deserializar_get_pokemon(t_buffer* buffer){
 
 	 Get_Pokemon get_pokemon = malloc(sizeof(Get_Pokemon));
 
@@ -379,7 +379,7 @@ void* deserializar_new_pokemon(t_buffer buffer){
 	 return get_pokemon;
  }
 
- void* deserializar_appeared_pokemon(t_buffer buffer){
+ void* deserializar_appeared_pokemon(t_buffer* buffer){
 
 	 Appeared_Pokemon appeared_pokemon = malloc(sizeof(Appeared_Pokemon));
 
@@ -398,7 +398,7 @@ void* deserializar_new_pokemon(t_buffer buffer){
 	 return appeared_pokemon;
  }
 
-  void* deserializar_catch_pokemon(t_buffer buffer){
+  void* deserializar_catch_pokemon(t_buffer* buffer){
 
 	 Catch_Pokemon catch_pokemon = malloc(sizeof(Catch_Pokemon));
 
@@ -418,7 +418,7 @@ void* deserializar_new_pokemon(t_buffer buffer){
 
   }
 
-  void* deserializar_caught_pokemon(t_buffer buffer){
+  void* deserializar_caught_pokemon(t_buffer* buffer){
 
 	  Caught_Pokemon caught_pokemon = malloc(sizeof(Caught_Pokemon));
 
@@ -435,7 +435,7 @@ void* deserializar_new_pokemon(t_buffer buffer){
 // nombreCantidad_coordenadasCoordenadaX1CoordenadaY1CoordenadaX2CoordenadaY2...
 // sin los "-"
 
-  void* deserializar_localized_pokemon(t_buffer buffer){
+  void* deserializar_localized_pokemon(t_buffer* buffer){
 
 	  Localized_Pokemon localized_pokemon = malloc(sizeof(Localized_Pokemon));
 

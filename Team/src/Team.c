@@ -8,6 +8,7 @@
 #include "semaphore.h"
 #include "commons/collections/list.h"
 #include <string.h>
+
 t_list* objetivosGlobales;
 t_list* pokemonesCapturados;
 t_list* pokemonesObtenidos;
@@ -24,7 +25,7 @@ t_list* mensajesCatch;
 t_queue* nuevosPokemones;
 t_queue* pokemonesPorAsignar;
 pthread_t hiloAppeared;
-pthread_t hiloLocalised;
+pthread_t hiloLocalized;
 pthread_t hiloCaught;
 pthread_t hiloReconexion;
 bool reconectando = 0;
@@ -34,7 +35,7 @@ pthread_mutex_t* mutexListaCatch;
 sem_t* getsMandados;
 sem_t* semNuevosPokemones;
 t_list* pokemonesEnMapa;
-int socketGlobal;
+int socketCatchPokemon;
 
 
 
@@ -53,6 +54,7 @@ int main(){
 	pokemonesEnMapa = list_create();
 	pokemonesCapturados = list_create();
 	nuevosPokemones = queue_create();
+	pokemonesPorAsignar = queue_create();
 	t_log* loggerTeam;
 	infoInicializacion configuracion;
 	inicializarListas(&configuracion,&new,&ready,&exec,&blocked,&term);
@@ -65,6 +67,9 @@ int main(){
 	info->configuracion.entrenadores = entrenadores;
 	configuracion.entrenadores = entrenadores;
 	limpiarObjetivosCumplidos();
+	pthread_create(&hiloAppeared,0,recibirAppeared,NULL);
+	pthread_create(&hiloLocalized,0,recibirLocalized,NULL);
+	pthread_create(&hiloCaught,0,recibirCaught,NULL);
 	mandarGets();
 }
 
@@ -81,11 +86,11 @@ void limpiarObjetivosCumplidos(){
 	poseidosAplanados = list_fold(poseidosAplanados,NULL,punteroACombinarListas);
 	for(int i=0; i<poseidosAplanados->elements_count;i++){
 		unPokemon = list_get(poseidosAplanados,i);
-		encontrado = false;
+		encontrado = 0;
 		for(int j = 0; i<objetivosGlobales->elements_count && !(encontrado);j++){
 			pokemonObjetivo = list_get(objetivosGlobales,j);
 			if(strcmp(unPokemon,pokemonObjetivo)==0){
-				encontrado = true;
+				encontrado = 1;
 				list_remove_and_destroy_element(objetivosGlobales,j,punteroAFree);
 			}
 		}
@@ -198,7 +203,7 @@ void buscarPokemones(int* id){
 		t_paquete* paquete = malloc(sizeof(t_paquete));
 		t_buffer* buffer;
 		Catch_Pokemon pokemon;
-			if(socketGlobal < 0){
+			if(socketCatchPokemon < 0){
 				log_error(info->logger, "Ha fallado la conexion con el broker, por comportamiento default el pokemon %s %d %d sera capturado ",
 						pokemonACapturar->nombre, pokemonACapturar->posicionX, pokemonACapturar->posicionY);
 				if(!(reconectando)){
@@ -228,13 +233,13 @@ void buscarPokemones(int* id){
 				memcpy(a_enviar + offset, paquete->buffer->stream, buffer->size);
 				offset = offset + buffer->size;
 
-				send(socketGlobal, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t), 0);
+				send(socketCatchPokemon, a_enviar, buffer->size + sizeof(uint8_t) + sizeof(uint32_t), 0);
 				free(a_enviar);
 				free(paquete->buffer->stream);
 				free(paquete->buffer);
 				free(paquete);
 
-				recv(socketGlobal, &(pokemon.id_mensaje), sizeof(uint32_t) , 0);
+				recv(socketCatchPokemon, &(pokemon.id_mensaje), sizeof(uint32_t) , 0);
 
 				pthread_mutex_unlock(mutexSocketGlobal);
 				pthread_mutex_lock(mutexListaCatch);
@@ -335,7 +340,7 @@ while (true){
 		sleep(info->configuracion.contimer);
 	}else{
 		reconectando = 0;
-		socketGlobal = socket;
+		socketCatchPokemon = socket;
 		log_info(info->logger,"reconexion con el broker con exito");
 		exit(0);
 		}
@@ -434,6 +439,7 @@ trainer* crearYAsignarHilo(trainer* unEntrenador,int i){
 	unEntrenador->hilo = &hiloEntrenador;
 	unEntrenador->estadoActual = NEW;
 	list_add(new.entrenadores,unEntrenador);
+	log_info(info->logger,"El entrenador %d es creado y entra a estado NEW",id);
 	return unEntrenador;
 }
 
@@ -549,3 +555,69 @@ nombreEstado cambiarDesdeAEstado (nombreEstado estadoViejo, nombreEstado estadoN
 
 	return estadoNuevo;
 }
+
+void recibirAppeared(){
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = sizeof(uint8_t);
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	void* stream = malloc(buffer->size);
+	void* a_enviar;
+	int offset = 0;
+	uint32_t listaASuscribirme = 11;
+	int socketAppeared;
+	Appeared_Pokemon* unPokemon;
+	PokemonEnMapa* nuevoPokemon;
+
+	socketAppeared = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
+	memcpy(stream + offset, &listaASuscribirme, sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	buffer->stream = stream;
+
+	paquete->codigo_operacion = 14;
+	paquete->buffer = buffer;
+	a_enviar = malloc(sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t));
+	offset = 0;
+	memcpy(a_enviar + offset, &paquete->codigo_operacion, sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	memcpy(a_enviar + offset, &paquete->buffer->size, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
+	offset += paquete->buffer->size;
+
+	send(socketAppeared, a_enviar, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t), 0);
+	free(a_enviar);
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
+
+	while(true){
+		paquete = malloc(sizeof(t_paquete));
+		paquete->buffer = malloc(sizeof(t_buffer));
+		recv(socketAppeared,&paquete->codigo_operacion,sizeof(uint8_t),0);
+		recv(socketAppeared,&paquete->buffer->size, sizeof(uint32_t),0);
+		paquete->buffer->stream = malloc(paquete->buffer->size);
+		recv(socketAppeared,paquete->buffer->stream, paquete->buffer->size,0);
+
+		unPokemon = deserializar_appeared_pokemon(paquete->buffer);
+		nuevoPokemon->nombre = unPokemon->nombre.nombre;
+		nuevoPokemon->posicionX = unPokemon->posicion.posicionX;
+		nuevoPokemon->posicionY = unPokemon->posicion.posicionY;
+		nuevoPokemon->atrapadoConExito = 0;
+
+
+
+		free(unPokemon);
+
+
+
+		pthread_mutex_lock(syncPokemones);
+		queue_push(nuevosPokemones, nuevoPokemon);
+		pthread_mutex_unlock(syncPokemones);
+
+
+
+	}
+}
+
+
+

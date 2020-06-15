@@ -90,9 +90,11 @@ int aceptar_cliente(int servidor){
 void atender_cliente(int socket_cliente){
 
 	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->buffer = malloc(sizeof(t_buffer));
 	recv(socket_cliente,&(paquete->codigo_operacion),sizeof(uint8_t),0);
 
 	recv(socket_cliente,&(paquete->buffer->size),sizeof(uint32_t),0);
+	paquete->buffer->stream = malloc(paquete->buffer->size);
 	recv(socket_cliente,&(paquete->buffer),sizeof(paquete->buffer->size),0);
 
 
