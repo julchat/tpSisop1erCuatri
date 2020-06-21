@@ -10,6 +10,7 @@
 #include <string.h>
 
 t_list* objetivosGlobales;
+t_list* pokemonesQueFaltanAceptar;
 t_list* pokemonesCapturados;
 t_list* pokemonesObtenidos;
 Estado new;
@@ -67,6 +68,7 @@ int main(){
 	info->configuracion.entrenadores = entrenadores;
 	configuracion.entrenadores = entrenadores;
 	limpiarObjetivosCumplidos();
+	pokemonesQueFaltanAceptar = list_duplicate(objetivosGlobales);
 	pthread_create(&hiloAppeared,0,recibirAppeared,NULL);
 	pthread_create(&hiloLocalized,0,recibirLocalized,NULL);
 	pthread_create(&hiloCaught,0,recibirCaught,NULL);
@@ -567,6 +569,7 @@ void recibirAppeared(){
 	int socketAppeared;
 	Appeared_Pokemon* unPokemon;
 	PokemonEnMapa* nuevoPokemon;
+	int posicionPokemon;
 
 	socketAppeared = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
 	memcpy(stream + offset, &listaASuscribirme, sizeof(uint8_t));
@@ -599,25 +602,44 @@ void recibirAppeared(){
 		recv(socketAppeared,paquete->buffer->stream, paquete->buffer->size,0);
 
 		unPokemon = deserializar_appeared_pokemon(paquete->buffer);
+		nuevoPokemon = malloc(sizeof(PokemonEnMapa));
 		nuevoPokemon->nombre = unPokemon->nombre.nombre;
 		nuevoPokemon->posicionX = unPokemon->posicion.posicionX;
 		nuevoPokemon->posicionY = unPokemon->posicion.posicionY;
 		nuevoPokemon->atrapadoConExito = 0;
 
-
-
 		free(unPokemon);
 
-
-
 		pthread_mutex_lock(syncPokemones);
+		posicionPokemon = aceptoPokemon(nuevoPokemon, "appeared");
+		if(posicionPokemon>=0){
+		list_remove(pokemonesQueFaltanAceptar,posicionPokemon);
 		queue_push(nuevosPokemones, nuevoPokemon);
 		pthread_mutex_unlock(syncPokemones);
-
-
-
+		}else{
+		pthread_mutex_unlock(syncPokemones);
+		free(nuevoPokemon->nombre);
+		}
 	}
 }
 
+int posicionEncontrada (PokemonEnMapa* nuevoPokemon, char* criterio){
+	bool encontrado = 0;
+	int i = 0;
+	char* unPoke;
+	char* otroPoke = nuevoPokemon->nombre;
+
+	if(strcmp(criterio,"appeared")==0){
+		for(int i = 0; i<pokemonesQueFaltanAceptar->elements_count && !encontrado;i++){
+			unPoke = list_get(pokemonesQueFaltanAceptar,i);
+			if(strcmp(unPoke, otroPoke)==0){
+				encontrado = 1;
+			}
+		}
+		return encontrado?i-1:-1;
+	}else{
+		return 0;
+	}
+}
 
 

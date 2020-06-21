@@ -143,4 +143,8 @@ void mandarGets();
 
 t_buffer* serializarCatchPokemon(Catch_Pokemon pokemon);
 
+int posicionEncontrada (PokemonEnMapa* nuevoPokemon, char* criterio);
+
+void recibirAppeared();
+
 #endif /* TEAM_SRC_TEAM_H_ */
