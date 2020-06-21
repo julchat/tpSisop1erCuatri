@@ -323,9 +323,10 @@ typedef struct{
 
 typedef struct{
 	int id_unico_mensaje; //tiene que ser UNICO
-	void *mensaje; // <------ Mensaje sin el op_code, lo cargamos desde "atender_cliente"
-	// No debería ser solo el opcode? se supone que esto es lo que define el tipo del msj
+	int id_correlativo; //opcional
+	int op_code;//todavia no se si va o no
 	//(Podriamos hacer una funcion que cargue el opcode y el mensaje deserializado en un info_mensaje(??))
+	void* principio_del_mensaje_en_memoria;
 	//suscriptores_mensaje_eviado* un_suscriptor;
 	//suscriptores_respondieron_ACK* un_suscriptor;
 
@@ -344,7 +345,7 @@ typedef struct{
 
 void* deserializar_new_pokemon(t_buffer* buffer){
 
-	New_Pokemon new_pokemon = malloc(sizeof(New_Pokemon));
+	New_Pokemon* new_pokemon = malloc(sizeof(New_Pokemon));
 
 	void* stream = buffer->stream;
 
@@ -366,7 +367,7 @@ void* deserializar_new_pokemon(t_buffer* buffer){
 
  void* deserializar_get_pokemon(t_buffer* buffer){
 
-	 Get_Pokemon get_pokemon = malloc(sizeof(Get_Pokemon));
+	 Get_Pokemon* get_pokemon = malloc(sizeof(Get_Pokemon));
 
 	 void* stream = buffer->stream;
 
@@ -400,7 +401,7 @@ void* deserializar_new_pokemon(t_buffer* buffer){
 
   void* deserializar_catch_pokemon(t_buffer* buffer){
 
-	 Catch_Pokemon catch_pokemon = malloc(sizeof(Catch_Pokemon));
+	 Catch_Pokemon* catch_pokemon = malloc(sizeof(Catch_Pokemon));
 
 	 void* stream = buffer->stream;
 
@@ -420,7 +421,7 @@ void* deserializar_new_pokemon(t_buffer* buffer){
 
   void* deserializar_caught_pokemon(t_buffer* buffer){
 
-	  Caught_Pokemon caught_pokemon = malloc(sizeof(Caught_Pokemon));
+	  Caught_Pokemon* caught_pokemon = malloc(sizeof(Caught_Pokemon));
 
 	  void* stream = buffer->stream;
 
@@ -437,7 +438,7 @@ void* deserializar_new_pokemon(t_buffer* buffer){
 
   void* deserializar_localized_pokemon(t_buffer* buffer){
 
-	  Localized_Pokemon localized_pokemon = malloc(sizeof(Localized_Pokemon));
+	  Localized_Pokemon* localized_pokemon = malloc(sizeof(Localized_Pokemon));
 
 	  void* temporal = buffer->stream;
 	  uint32_t longitud_nombre_pokemon;

@@ -44,8 +44,7 @@ configuracion_broker->log_file = config_get_string_value(config,"LOG_FILE");
 
 t_log* logger = iniciar_logger_de_nivel_minimo(LOG_LEVEL_INFO,configuracion_broker->log_file);
 socket_client = crear_conexion(configuracion_broker->ip_broker,configuracion_broker->puerto_broker);
-// Hay un problema de tipos con crear_conexion y lo que levantamos desde la config, IP_BROKER es un INT pero la funcion
-// lo usa como char* (lo levantamos como char*, no hay problema)
+
 
 // Logs hechos:
 /*1(conexion de un proceso al broker)
@@ -98,19 +97,20 @@ void atender_cliente(int socket_cliente){
 	recv(socket_cliente,&(paquete->buffer),sizeof(paquete->buffer->size),0);
 
 
-
 	switch(paquete->codigo_operacion){
 		case 2: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
 				cargar_new_en_memoria(mensaje_new);
 				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes New_Pokemon");
+				free(mensaje_new->nombre->nombre);
 				free(mensaje_new);
 				break;
 
-		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer); //Falta hacer esta funcion con el tema de los vectores :C
+		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer);
 				cargar_localized_en_memoria(mensaje_localized);
 				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Localized_Pokemon");
+				free(mensaje_localized->nombre->nombre);
 				free(mensaje_localized);
 			    break;
 
@@ -118,6 +118,7 @@ void atender_cliente(int socket_cliente){
 				cargar_get_en_memoria(mensaje_get);
 				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Get_Pokemon");
+				free(mensaje_get->nombre->nombre);
 				free(mensaje_get);
 				break;
 
@@ -125,6 +126,7 @@ void atender_cliente(int socket_cliente){
 				cargar_appeared_en_memoria(mensaje_appeared);
 				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Appeared_Pokemon");
+				free(mensaje_appeared->nombre->nombre);
 				free(mensaje_appeared);
 				break;
 
@@ -132,6 +134,7 @@ void atender_cliente(int socket_cliente){
 				cargar_catch_en_memoria(mensaje_catch);
 				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Catch_Pokemon");
+				free(mensaje_catch->nombre->nombre);
 				free(mensaje_catch);
 				break;
 
@@ -143,8 +146,12 @@ void atender_cliente(int socket_cliente){
 				break;
 
 		case 14: Suscribir(paquete->buffer);
-				 break;
+				break;
 	}
+
+				free(paquete->buffer->stream);
+				free(paquete->buffer);
+				free(paquete);
 }
 
 
@@ -229,6 +236,9 @@ void atender_cliente(int socket_cliente){
   }
 
 
+  //----------------------------------------------Sacar mensajes de memoria (si pero no)----------------------------------------------------------------
+
+
 
 
   //----------------------------------------------Manejo de colas(que son listas, shh nadie lo sabe)----------------------------------------
@@ -237,6 +247,8 @@ void atender_cliente(int socket_cliente){
   /* Se encarga de meter los mensajes (la estructura administrador_mensaje) a la lista, tambien es el que
    * genera y setea los id_unico de cada mensaje
    */
+
+  // CAMBIAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ahora encola info_mensajes
 
   void encolar_mensaje(administrador_mensajes *p,void* unMensaje){ //Agrega los nodos al final de la lista
 	  administrador_mensajes nuevo;
@@ -287,6 +299,7 @@ void atender_cliente(int socket_cliente){
 
       }
 
+    }
   }
 
 return EXIT_SUCCESS;
