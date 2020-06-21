@@ -153,3 +153,31 @@ Appeared_Pokemon* deserializar_appeared_pokemon(t_buffer* buffer){
 
 	 return appeared_pokemon;
 }
+
+Localized_Pokemon* desearializar_localized_pokemon(t_buffer* buffer){
+	Localized_Pokemon* grupoDePokemon;
+	uint32_t longitudNombre;
+	uint32_t cantidadDeParesDeCoordenadas;
+	t_posicion32* unaPosicion;
+	grupoDePokemon->posiciones = list_create();
+	void* stream = buffer;
+	int offset = 0;
+
+	memcpy(&longitudNombre,stream+offset,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	grupoDePokemon->nombre = malloc(longitudNombre);
+	memcpy(grupoDePokemon->nombre,stream+offset,longitudNombre);
+	offset+= longitudNombre;
+	memcpy(&cantidadDeParesDeCoordenadas,stream+offset,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+
+	for(int i = 0; i<cantidadDeParesDeCoordenadas; i++){
+	memcpy(&unaPosicion->posicionX,stream+offset,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	memcpy(&unaPosicion->posicionY,stream+offset,sizeof(uint32_t));
+	offset+= sizeof(uint32_t);
+	list_add(grupoDePokemon->posiciones,unaPosicion); //el list_add hace malloc de cada unaPosicion
+	}
+
+	return grupoDePokemon;
+}

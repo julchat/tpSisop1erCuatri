@@ -608,6 +608,9 @@ void recibirAppeared(){
 		nuevoPokemon->posicionY = unPokemon->posicion.posicionY;
 		nuevoPokemon->atrapadoConExito = 0;
 
+		free(paquete->buffer->stream);
+		free(paquete->buffer);
+		free(paquete);
 		free(unPokemon);
 
 		pthread_mutex_lock(syncPokemones);
@@ -642,4 +645,71 @@ int posicionEncontrada (PokemonEnMapa* nuevoPokemon, char* criterio){
 	}
 }
 
+void recibirLocalized(){
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = sizeof(uint8_t);
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	void* stream = malloc(buffer->size);
+	void* a_enviar;
+	int offset = 0;
+	uint32_t listaASuscribirme = 9;
+	int socketLocalized;
+	Localized_Pokemon* grupoDePokemon;
+	PokemonEnMapa* nuevoPokemon;
+	int posicionPokemon;
 
+	socketLocalized = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
+	memcpy(stream + offset, &listaASuscribirme, sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	buffer->stream = stream;
+
+	paquete->codigo_operacion = 14;
+	paquete->buffer = buffer;
+	a_enviar = malloc(sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t));
+	offset = 0;
+	memcpy(a_enviar + offset, &paquete->codigo_operacion, sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	memcpy(a_enviar + offset, &paquete->buffer->size, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
+	offset += paquete->buffer->size;
+
+	send(socketLocalized, a_enviar, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t), 0);
+	free(a_enviar);
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
+
+	while(true){
+		paquete = malloc(sizeof(t_paquete));
+		paquete->buffer = malloc(sizeof(t_buffer));
+		recv(socketLocalized,&paquete->codigo_operacion,sizeof(uint8_t),0);
+		recv(socketLocalized,&paquete->buffer->size, sizeof(uint32_t),0);
+		paquete->buffer->stream = malloc(paquete->buffer->size);
+		recv(socketLocalized,paquete->buffer->stream, paquete->buffer->size,0);
+
+		grupoDePokemon = deserializar_localized_pokemon(paquete->buffer);
+		/*nuevoPokemon = malloc(sizeof(PokemonEnMapa));
+		nuevoPokemon->nombre = grupoDePokemon->nombre.nombre;
+		nuevoPokemon->posicionX = grupoDePokemon->posicion.posicionX;
+		nuevoPokemon->posicionY = grupoDePokemon->posicion.posicionY;
+		nuevoPokemon->atrapadoConExito = 0;
+
+		free(grupoDePokemon);
+		free(paquete->buffer->stream);
+		free(paquete->buffer);
+		free(paquete);
+
+		pthread_mutex_lock(syncPokemones);
+		posicionPokemon = aceptoPokemon(nuevoPokemon, "localized");
+		if(posicionPokemon>=0){
+		list_remove(pokemonesQueFaltanAceptar,posicionPokemon);
+		queue_push(nuevosPokemones, nuevoPokemon);
+		pthread_mutex_unlock(syncPokemones);
+		}else{
+		pthread_mutex_unlock(syncPokemones);
+		free(nuevoPokemon->nombre);
+		}*/
+		//falta corregir esto
+	}
+}
