@@ -6,6 +6,15 @@
 #include <commons/collections/list.h>
 
 
+/* To do list:
+ * 1) Crear la funcion que envie mensajes
+ * 2) Ver el tema de los id_correlativos, hay que modificar los deserializadores (agregar id_correlativo a los void* stream)
+ * 3) Faltan las funciones de "sacar de memoria"
+ * 4) todo el tema de compactacion de memoria
+ * 5) los logs restantes (mas abajo se especifica)
+ *
+ *  */
+
 
 // revisar que va en el main y que no !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -96,9 +105,13 @@ void atender_cliente(int socket_cliente){
 	paquete->buffer->stream = malloc(paquete->buffer->size);
 	recv(socket_cliente,&(paquete->buffer),sizeof(paquete->buffer->size),0);
 
+	//Aca podemos agregar un recv mas para el tema del id_correlativo, asi no modifico los descerializadores
+	//lo mandariamos ultimo en la secuencia para appeared , caught y localized
+
 
 	switch(paquete->codigo_operacion){
 		case 2: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
+				encolar_mensaje(cola_mensajes_new,paquete->codigo_operacion);
 				cargar_new_en_memoria(mensaje_new);
 				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes New_Pokemon");
@@ -107,32 +120,32 @@ void atender_cliente(int socket_cliente){
 				break;
 
 		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer);
+				encolar_mensaje(cola_mensajes_localized,paquete->codigo_operacion);
 				cargar_localized_en_memoria(mensaje_localized);
-				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Localized_Pokemon");
 				free(mensaje_localized->nombre->nombre);
 				free(mensaje_localized);
 			    break;
 
 		case 4: Get_Pokemon* mensaje_get = deserializar_get_pokemon(paquete->buffer);
+				encolar_mensaje(cola_mensajes_get,paquete->codigo_operacion);
 				cargar_get_en_memoria(mensaje_get);
-				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Get_Pokemon");
 				free(mensaje_get->nombre->nombre);
 				free(mensaje_get);
 				break;
 
 		case 5: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
+				encolar_mensaje(cola_mensajes_appeared,paquete->codigo_operacion);
 				cargar_appeared_en_memoria(mensaje_appeared);
-				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Appeared_Pokemon");
 				free(mensaje_appeared->nombre->nombre);
 				free(mensaje_appeared);
 				break;
 
 		case 6: Catch_Pokemon* mensaje_catch = deserializar_catch_pokemon(paquete->buffer);
+				encolar_mensaje(cola_mensajes_catch,paquete->codigo_operacion);
 				cargar_catch_en_memoria(mensaje_catch);
-				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Catch_Pokemon");
 				free(mensaje_catch->nombre->nombre);
 				free(mensaje_catch);
@@ -140,7 +153,7 @@ void atender_cliente(int socket_cliente){
 
 		case 7: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
 				cargar_caught_en_memoria(mensaje_caught);
-				// Falta meter a cola la estructura administrativa del mensaje
+				encolar_mensaje(cola_mensajes_caught,paquete->codigo_operacion);
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Caught_Pokemon");
 				free(mensaje_caught);
 				break;
@@ -244,15 +257,17 @@ void atender_cliente(int socket_cliente){
   //----------------------------------------------Manejo de colas(que son listas, shh nadie lo sabe)----------------------------------------
 
 
-  /* Se encarga de meter los mensajes (la estructura administrador_mensaje) a la lista, tambien es el que
+  /* Se encarga de meter los info_mensajes (la estructura administrador_mensaje) a la lista, tambien es el que
    * genera y setea los id_unico de cada mensaje
    */
 
-  // CAMBIAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ahora encola info_mensajes
+  // Dudas: Quiero el opcode? me sirve de algo tenerlo?
 
-  void encolar_mensaje(administrador_mensajes *p,void* unMensaje){ //Agrega los nodos al final de la lista
+  void encolar_mensaje(administrador_mensajes *p, int op_code){ //Agrega los nodos al final de la lista
 	  administrador_mensajes nuevo;
-	  nuevo->un_mensaje->mensaje = unMensaje;
+	  nuevo->un_mensaje->principio_del_mensaje_en_memoria = siguiente_posicion_libre; // Funciona de momento, cuando tenga compactacion esto vuela
+    //nuevo->un_mensaje->id_correlativo Hay que pasarlo por
+	  nuevo->un_mensaje->op_code = op_code;
 	  nuevo->un_mensaje->id_unico_mensaje = id_unico; // La variable global
 	  id_unico++;
 	  nuevo->siguiente_info = NULL;
