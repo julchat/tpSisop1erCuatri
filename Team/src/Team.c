@@ -10,6 +10,7 @@
 #include <string.h>
 
 t_list* objetivosGlobales;
+t_list* pokemonesQueFaltanAceptar;
 t_list* pokemonesCapturados;
 t_list* pokemonesObtenidos;
 Estado new;
@@ -67,6 +68,7 @@ int main(){
 	info->configuracion.entrenadores = entrenadores;
 	configuracion.entrenadores = entrenadores;
 	limpiarObjetivosCumplidos();
+	pokemonesQueFaltanAceptar = list_duplicate(objetivosGlobales);
 	pthread_create(&hiloAppeared,0,recibirAppeared,NULL);
 	pthread_create(&hiloLocalized,0,recibirLocalized,NULL);
 	pthread_create(&hiloCaught,0,recibirCaught,NULL);
@@ -567,6 +569,7 @@ void recibirAppeared(){
 	int socketAppeared;
 	Appeared_Pokemon* unPokemon;
 	PokemonEnMapa* nuevoPokemon;
+	int posicionPokemon;
 
 	socketAppeared = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
 	memcpy(stream + offset, &listaASuscribirme, sizeof(uint8_t));
@@ -599,25 +602,114 @@ void recibirAppeared(){
 		recv(socketAppeared,paquete->buffer->stream, paquete->buffer->size,0);
 
 		unPokemon = deserializar_appeared_pokemon(paquete->buffer);
+		nuevoPokemon = malloc(sizeof(PokemonEnMapa));
 		nuevoPokemon->nombre = unPokemon->nombre.nombre;
 		nuevoPokemon->posicionX = unPokemon->posicion.posicionX;
 		nuevoPokemon->posicionY = unPokemon->posicion.posicionY;
 		nuevoPokemon->atrapadoConExito = 0;
 
-
-
+		free(paquete->buffer->stream);
+		free(paquete->buffer);
+		free(paquete);
 		free(unPokemon);
 
-
-
 		pthread_mutex_lock(syncPokemones);
+		posicionPokemon = aceptoPokemon(nuevoPokemon, "appeared");
+		if(posicionPokemon>=0){
+		list_remove(pokemonesQueFaltanAceptar,posicionPokemon);
 		queue_push(nuevosPokemones, nuevoPokemon);
 		pthread_mutex_unlock(syncPokemones);
-
-
-
+		}else{
+		pthread_mutex_unlock(syncPokemones);
+		free(nuevoPokemon->nombre);
+		}
 	}
 }
 
+int posicionEncontrada (PokemonEnMapa* nuevoPokemon, char* criterio){
+	bool encontrado = 0;
+	int i = 0;
+	char* unPoke;
+	char* otroPoke = nuevoPokemon->nombre;
 
+	if(strcmp(criterio,"appeared")==0){
+		for(int i = 0; i<pokemonesQueFaltanAceptar->elements_count && !encontrado;i++){
+			unPoke = list_get(pokemonesQueFaltanAceptar,i);
+			if(strcmp(unPoke, otroPoke)==0){
+				encontrado = 1;
+			}
+		}
+		return encontrado?i-1:-1;
+	}else{
+		return 0;
+	}
+}
 
+void recibirLocalized(){
+	t_buffer* buffer = malloc(sizeof(t_buffer));
+	buffer->size = sizeof(uint8_t);
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	void* stream = malloc(buffer->size);
+	void* a_enviar;
+	int offset = 0;
+	uint32_t listaASuscribirme = 9;
+	int socketLocalized;
+	Localized_Pokemon* grupoDePokemon;
+	PokemonEnMapa* nuevoPokemon;
+	int posicionPokemon;
+
+	socketLocalized = crear_conexion(info->configuracion.ip,info->configuracion.puerto);
+	memcpy(stream + offset, &listaASuscribirme, sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	buffer->stream = stream;
+
+	paquete->codigo_operacion = 14;
+	paquete->buffer = buffer;
+	a_enviar = malloc(sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t));
+	offset = 0;
+	memcpy(a_enviar + offset, &paquete->codigo_operacion, sizeof(uint8_t));
+	offset += sizeof(uint8_t);
+	memcpy(a_enviar + offset, &paquete->buffer->size, sizeof(uint32_t));
+	offset += sizeof(uint32_t);
+	memcpy(a_enviar + offset, paquete->buffer->stream, paquete->buffer->size);
+	offset += paquete->buffer->size;
+
+	send(socketLocalized, a_enviar, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t), 0);
+	free(a_enviar);
+	free(paquete->buffer->stream);
+	free(paquete->buffer);
+	free(paquete);
+
+	while(true){
+		paquete = malloc(sizeof(t_paquete));
+		paquete->buffer = malloc(sizeof(t_buffer));
+		recv(socketLocalized,&paquete->codigo_operacion,sizeof(uint8_t),0);
+		recv(socketLocalized,&paquete->buffer->size, sizeof(uint32_t),0);
+		paquete->buffer->stream = malloc(paquete->buffer->size);
+		recv(socketLocalized,paquete->buffer->stream, paquete->buffer->size,0);
+
+		grupoDePokemon = deserializar_localized_pokemon(paquete->buffer);
+		/*nuevoPokemon = malloc(sizeof(PokemonEnMapa));
+		nuevoPokemon->nombre = grupoDePokemon->nombre.nombre;
+		nuevoPokemon->posicionX = grupoDePokemon->posicion.posicionX;
+		nuevoPokemon->posicionY = grupoDePokemon->posicion.posicionY;
+		nuevoPokemon->atrapadoConExito = 0;
+
+		free(grupoDePokemon);
+		free(paquete->buffer->stream);
+		free(paquete->buffer);
+		free(paquete);
+
+		pthread_mutex_lock(syncPokemones);
+		posicionPokemon = aceptoPokemon(nuevoPokemon, "localized");
+		if(posicionPokemon>=0){
+		list_remove(pokemonesQueFaltanAceptar,posicionPokemon);
+		queue_push(nuevosPokemones, nuevoPokemon);
+		pthread_mutex_unlock(syncPokemones);
+		}else{
+		pthread_mutex_unlock(syncPokemones);
+		free(nuevoPokemon->nombre);
+		}*/
+		//falta corregir esto
+	}
+}

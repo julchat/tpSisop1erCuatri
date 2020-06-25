@@ -101,6 +101,11 @@ typedef struct{
 	t_posicion32 posicion;
 }Appeared_Pokemon;
 
+typedef struct{
+	t_nombre_pokemon nombre;
+	t_list* posiciones;
+}Localized_Pokemon;
+
 
 
 t_list* armarEntrenadores(infoInicializacion);
@@ -142,5 +147,11 @@ bool hayEntrenadoresLibres();
 void mandarGets();
 
 t_buffer* serializarCatchPokemon(Catch_Pokemon pokemon);
+
+int posicionEncontrada (PokemonEnMapa* nuevoPokemon, char* criterio);
+
+void recibirAppeared();
+
+void recibirLocalized();
 
 #endif /* TEAM_SRC_TEAM_H_ */
