@@ -27,11 +27,12 @@ int socket_client;
 
 
 administrador_mensajes* cola_mensajes_new = NULL;
-administrador_mensajes* cola_mensajes_localized = NULL;
 administrador_mensajes* cola_mensajes_get = NULL;
-administrador_mensajes* cola_mensajes_appeared = NULL;
 administrador_mensajes* cola_mensajes_catch = NULL;
-administrador_mensajes* cola_mensajes_caught = NULL;
+// Los de tipo 2 son porque tienen un id_correlativo, cosa que los no
+administrador_mensajes_2* cola_mensajes_localized = NULL;
+administrador_mensajes_2* cola_mensajes_appeared = NULL;
+administrador_mensajes_2* cola_mensajes_caught = NULL;
 
 
 
@@ -113,14 +114,13 @@ void atender_cliente(int socket_cliente){
 		case 2: New_Pokemon* mensaje_new = deserializar_new_pokemon(paquete->buffer);
 				encolar_mensaje(cola_mensajes_new,paquete->codigo_operacion);
 				cargar_new_en_memoria(mensaje_new);
-				// Falta meter a cola la estructura administrativa del mensaje
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes New_Pokemon");
 				free(mensaje_new->nombre->nombre);
 				free(mensaje_new);
 				break;
 
 		case 3: Localized_Pokemon* mensaje_localized = deserializar_localized_pokemon(paquete->buffer);
-				encolar_mensaje(cola_mensajes_localized,paquete->codigo_operacion);
+				encolar_mensaje_con_id_correlativo(cola_mensajes_localized,paquete->codigo_operacion,mensaje_localized->id_correlativo);
 				cargar_localized_en_memoria(mensaje_localized);
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Localized_Pokemon");
 				free(mensaje_localized->nombre->nombre);
@@ -136,7 +136,7 @@ void atender_cliente(int socket_cliente){
 				break;
 
 		case 5: Appeared_Pokemon* mensaje_appeared = deserializar_appeared_pokemon(paquete->buffer);
-				encolar_mensaje(cola_mensajes_appeared,paquete->codigo_operacion);
+				encolar_mensaje_con_id_correlativo(cola_mensajes_appeared,paquete->codigo_operacion,mensaje_appeared->id_correlativo);
 				cargar_appeared_en_memoria(mensaje_appeared);
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Appeared_Pokemon");
 				free(mensaje_appeared->nombre->nombre);
@@ -153,7 +153,7 @@ void atender_cliente(int socket_cliente){
 
 		case 7: Caught_Pokemon* mensaje_caught = deserializar_caught_pokemon(paquete->buffer);
 				cargar_caught_en_memoria(mensaje_caught);
-				encolar_mensaje(cola_mensajes_caught,paquete->codigo_operacion);
+				encolar_mensaje_con_id_correlativo(cola_mensajes_caught,paquete->codigo_operacion,mensaje_caught->id_correlativo);
 				log_info(logger,"Se agregó un mensaje a la cola de mensajes Caught_Pokemon");
 				free(mensaje_caught);
 				break;
@@ -258,7 +258,7 @@ void atender_cliente(int socket_cliente){
 
 
   /* Se encarga de meter los info_mensajes (la estructura administrador_mensaje) a la lista, tambien es el que
-   * genera y setea los id_unico de cada mensaje
+   * genera y setea los id_unico de cada mensaje, hay 2 tipos uno para las listas con id_correlativo y otro para las sin
    */
 
   // Dudas: Quiero el opcode? me sirve de algo tenerlo?
@@ -266,9 +266,29 @@ void atender_cliente(int socket_cliente){
   void encolar_mensaje(administrador_mensajes *p, int op_code){ //Agrega los nodos al final de la lista
 	  administrador_mensajes nuevo;
 	  nuevo->un_mensaje->principio_del_mensaje_en_memoria = siguiente_posicion_libre; // Funciona de momento, cuando tenga compactacion esto vuela
-    //nuevo->un_mensaje->id_correlativo Hay que pasarlo por
 	  nuevo->un_mensaje->op_code = op_code;
-	  nuevo->un_mensaje->id_unico_mensaje = id_unico; // La variable global
+	  nuevo->un_mensaje->id_unico_mensaje = id_unico;
+	  id_unico++;
+	  nuevo->siguiente_info = NULL;
+	  if (p == NULL) {
+		  p = nuevo;
+	  }
+	  else {
+		  administrador_mensajes auxiliar = p;
+		  while (auxiliar->siguiente_info != NULL){
+			  auxiliar = auxiliar->siguiente_info;
+		  }
+		  auxiliar->siguiente_info = nuevo;
+	  }
+  }
+
+
+  void encolar_mensaje_con_id_correlativo(administrador_mensajes *p, int op_code,uint32_t id_correlativo){ //Agrega los nodos al final de la lista
+	  administrador_mensajes_2 nuevo;
+	  nuevo->un_mensaje->principio_del_mensaje_en_memoria = siguiente_posicion_libre; // Funciona de momento, cuando tenga compactacion esto vuela
+      nuevo->un_mensaje->id_correlativo = id_correlativo;
+	  nuevo->un_mensaje->op_code = op_code;
+	  nuevo->un_mensaje->id_unico_mensaje = id_unico;
 	  id_unico++;
 	  nuevo->siguiente_info = NULL;
 	  if (p == NULL) {

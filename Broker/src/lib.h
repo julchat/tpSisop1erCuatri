@@ -227,12 +227,14 @@ typedef struct{
 typedef struct{
 	uint32_t posicion_X;
 	uint32_t posicion_Y;
+
 }t_posicion;
 
 
 typedef struct{
 	uint32_t size_nombre;
 	char* nombre;
+
 }t_nombre_pokemon;
 
 
@@ -245,12 +247,13 @@ typedef struct{
 
 /* Para enviar el mensaje localized hay que serializar la siguiente estructura, la cual sera introducida
  en el void* stream del t_buffer, cuando la deserializemos la cargamos en el struct Localized_Pokemon
- el formateo del string a seguir es nombre-cantidad_coordenadas-coordenadaX1-coordenadaY1-coordenadaX2-coordenadaY2...
+ el formateo del string a seguir es nombre-id_correlativo-cantidad_coordenadas-coordenadaX1-coordenadaY1-coordenadaX2-coordenadaY2...
  sin los "-"
 */
 
 typedef struct{
 	t_nombre_pokemon nombre;
+	uint32_t id_correlativo;
 	uint32_t cantidad_coordenadas;
 	t_posicion posiciones[];
 
@@ -259,17 +262,26 @@ typedef struct{
 
 typedef struct{
 	t_nombre_pokemon nombre;
+
 }Get_Pokemon;
 
 
 typedef struct{
 	t_nombre_pokemon nombre;
 	t_posicion posicion;
-}Appeared_Pokemon,Catch_Pokemon;
+	uint32_t id_correlativo;
 
+}Appeared_Pokemon;
+
+typedef struct{
+	t_nombre_pokemon nombre;
+	t_posicion posicion;
+
+}Catch_Pokemon;
 
 typedef struct{
 	uint32_t valor;
+	uint32_t id_correlativo;
 
 }Caught_Pokemon;
 
@@ -323,9 +335,7 @@ typedef struct{
 
 typedef struct{
 	int id_unico_mensaje; //tiene que ser UNICO
-	int id_correlativo; //opcional
 	int op_code;//todavia no se si va o no
-	//(Podriamos hacer una funcion que cargue el opcode y el mensaje deserializado en un info_mensaje(??))
 	void* principio_del_mensaje_en_memoria;
 	//suscriptores_mensaje_eviado* un_suscriptor;
 	//suscriptores_respondieron_ACK* un_suscriptor;
@@ -337,6 +347,23 @@ typedef struct{
 	administrador_mensajes* siguiente_info;
 
 }administrador_mensajes;
+
+
+typedef struct{
+	int id_unico_mensaje; //tiene que ser UNICO
+	uint32_t id_correlativo; //opcional
+	int op_code;//todavia no se si va o no
+	void* principio_del_mensaje_en_memoria;
+	//suscriptores_mensaje_eviado* un_suscriptor;
+	//suscriptores_respondieron_ACK* un_suscriptor;
+
+}info_mensaje_2;
+
+typedef struct{
+	info_mensaje_2 un_mensaje;
+	administrador_mensajes* siguiente_info;
+
+}administrador_mensajes_2;
 
 
 
@@ -395,6 +422,9 @@ void* deserializar_new_pokemon(t_buffer* buffer){
  	 stream += sizeof(uint32_t);
  	 memcpy(&(appeared_pokemon->posicion.posicion_Y),stream,sizeof(uint32_t));
  	 stream += sizeof(uint32_t);
+ 	 memcpy(&(appeared_pokemon->id_correlativo),stream,sizeof(uint32_t));
+ 	 stream += sizeof(uint32_t);
+
 
  	 return appeared_pokemon;
  }
@@ -427,6 +457,8 @@ void* deserializar_new_pokemon(t_buffer* buffer){
 
 	 memcpy(&(caught_pokemon->valor),stream,sizeof(uint32_t));
 	 stream += sizeof(uint32_t);
+	 memcpy(&(caught_pokemon->id_correlativo),stream,sizeof(uint32_t));
+	 stream += sizeof(uint32_t);
 
 	 return caught_pokemon;
 
@@ -447,12 +479,16 @@ void* deserializar_new_pokemon(t_buffer* buffer){
 	  char* nombre_pokemon = malloc(longitud_nombre_pokemon);
 	  memcpy(&(nombre_pokemon),temporal,longitud_nombre_pokemon);
 	  temporal += longitud_nombre_pokemon;
+	  uint32_t id_correlativo;
+	  memcpy(&(id_correlativo),temporal,sizeof(uint32_t));
+	  temporal += sizeof(uint32_t);
 	  uint32_t cantidad_posiciones;
 	  memcpy(&(cantidad_posiciones),temporal,sizeof(uint32_t));
 	  temporal += sizeof(uint32_t);
 
 	  localized_pokemon->nombre->size_nombre = longitud_nombre_pokemon;
 	  localized_pokemon->nombre->nombre = nombre_pokemon;
+	  localized_pokemon->id_correlativo = id_correlativo;
 	  localized_pokemon->cantidad_coordenadas = cantidad_posiciones;
 
 
