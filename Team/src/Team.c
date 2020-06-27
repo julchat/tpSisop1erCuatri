@@ -13,6 +13,7 @@ t_list* objetivosGlobales;
 t_list* pokemonesQueFaltanAceptar;
 t_list* pokemonesCapturados;
 t_list* pokemonesObtenidos;
+t_list* especiesAceptadas;
 Estado new;
 Estado ready;
 Estado exec;
@@ -33,6 +34,7 @@ bool reconectando = 0;
 pthread_mutex_t* syncPokemones;
 pthread_mutex_t* mutexSocketGlobal;
 pthread_mutex_t* mutexListaCatch;
+pthread_mutex_t* mutexColaMapa;
 sem_t* getsMandados;
 sem_t* semNuevosPokemones;
 t_list* pokemonesEnMapa;
@@ -51,6 +53,7 @@ int main(){
 	pthread_mutex_init(syncPokemones,NULL);
 	pthread_mutex_init(mutexSocketGlobal,NULL);
 	pthread_mutex_init(mutexListaCatch,NULL);
+	pthread_mutex_init(mutexColaMapa,NULL);
 	entrenadores = list_create();
 	pokemonesEnMapa = list_create();
 	pokemonesCapturados = list_create();
@@ -187,7 +190,7 @@ void buscarPokemones(int* id){
 	infoInicializacion configuracion = info->configuracion;
 	trainer* yo = list_get(info->configuracion.entrenadores,*id);
 	sem_init(yo->permisoParaMoverme,0,0);
-	sem_init(yo->pokemonAtrapadoSatisfactoriamente,0,0);
+	sem_init(yo->resultadoCatchPokemon,0,0);
 	pthread_mutex_init(yo->miMutex,NULL);
 	t_list* misPokemones = yo->poseidos;
 	t_list* misObjetivos = yo->objetivos;
@@ -197,6 +200,7 @@ void buscarPokemones(int* id){
 	int cantActual = misPokemones->elements_count;
 	nombreEstado estadoAnterior;
 	bool estoyEnDeadlock = 0;
+	bool atrapadoBien = 0;
 	trainer* entrenadorProximo;
 
 
@@ -212,7 +216,9 @@ void buscarPokemones(int* id){
 					reconectando = 1;
 					pthread_create(&hiloReconexion,NULL,reconectar,NULL);
 				}
-				sem_post(yo->pokemonAtrapadoSatisfactoriamente);
+				atrapadoBien = 1;
+				sem_post(yo->resultadoCatchPokemon);
+
 			}
 			else{
 				pthread_mutex_lock(mutexSocketGlobal);
@@ -305,20 +311,42 @@ void buscarPokemones(int* id){
     			estadoAnterior = EXEC;
     			entrenadorProximo = obtenerSiguienteEntrenador();
     			pthread_mutex_unlock(entrenadorProximo->miMutex);
-    				sem_wait(yo->pokemonAtrapadoSatisfactoriamente);
+    			sem_wait(yo->resultadoCatchPokemon);
+    				if(atrapadoBien){
+    					log_info(info->logger, "Entrenador %d capturo con exito en %d %d al pokemon %s", yo->identificador,
+    					   yo->objetivoActual->posicionX, yo->objetivoActual->posicionY, yo->objetivoActual->nombre);
     					list_add(misPokemones, yo->objetivoActual->nombre);
     					list_add(pokemonesCapturados, yo->objetivoActual);
     					list_add(pokemonesObtenidos, yo->objetivoActual);
-    						if(cantActual == cantMax){
-    						if(termine(*id)){
-    							estadoAnterior = BLOCKED;
-    							yo->estadoActual = cambiarDesdeAEstado(BLOCKED, TERM, *id, "Entrenador %d consiguio los pokemones que buscaba");
-    						}else{
-    							estoyEnDeadlock = 1;
+    					quitarDeObjetivosGlobales(yo->objetivoActual->nombre);
+    				}else{
+    					log_info(info->logger, "Entrenador %d fracaso en capturar en %d %d al pokemon %s", yo->identificador,
+    					    yo->objetivoActual->posicionX, yo->objetivoActual->posicionY, yo->objetivoActual->nombre);
+    						pthread_mutex_lock(mutexColaMapa);
+    						queue_push(pokemonesPorAsignar,yo->objetivoActual);
+    						pthread_mutex_unlock(mutexColaMapa);
+    				}
+    				atrapadoBien = 0;
+    				if(cantActual == cantMax){
+    					if(termine(*id)){
+    						estadoAnterior = BLOCKED;
+    						yo->estadoActual = cambiarDesdeAEstado(BLOCKED, TERM, *id, "Entrenador %d consiguio los pokemones que buscaba");
+    					}else{
+    						estoyEnDeadlock = 1;
     					}
+    				}else{
+    					pthread_mutex_lock(mutexColaMapa);
+    					yo->objetivoActual=queue_pop(pokemonesPorAsignar);
+    					if(yo->objetivoActual==NULL){
+    						yo->estoyLibre=1;
+    					}
+    					pthread_mutex_unlock(mutexColaMapa);
     				}
     			}
     		}
+    	}else{
+
+
     	}
     }
 	list_destroy(yo->poseidos);
@@ -358,6 +386,7 @@ void planificadorAReady(){
 		pthread_mutex_lock(syncPokemones);
 		pokemonNuevo = queue_pop(nuevosPokemones);
 		pthread_mutex_unlock(syncPokemones);
+		pthread_mutex_lock(mutexColaMapa);
 		queue_push(pokemonesPorAsignar,pokemonNuevo);
 		if(hayEntrenadoresLibres()){
 			for(int i = 0; i<queue_size(pokemonesPorAsignar); i++){
@@ -365,6 +394,7 @@ void planificadorAReady(){
 				asignarPokemonAMejorEntrenador(pokemonPorAsignar);
 			}
 		}
+		pthread_mutex_unlock(mutexColaMapa);
 
 	}
 }
@@ -614,7 +644,7 @@ void recibirAppeared(){
 		free(unPokemon);
 
 		pthread_mutex_lock(syncPokemones);
-		posicionPokemon = aceptoPokemon(nuevoPokemon, "appeared");
+		posicionPokemon = posicionEncontrada(nuevoPokemon, "appeared");
 		if(posicionPokemon>=0){
 		list_remove(pokemonesQueFaltanAceptar,posicionPokemon);
 		queue_push(nuevosPokemones, nuevoPokemon);

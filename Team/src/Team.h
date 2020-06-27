@@ -52,7 +52,7 @@ typedef struct
 	t_posicion posicion;
 	pthread_mutex_t* miMutex;
 	sem_t* permisoParaMoverme;
-	sem_t* pokemonAtrapadoSatisfactoriamente;
+	sem_t* resultadoCatchPokemon;
 	PokemonEnMapa* objetivoActual;
 } trainer;
 
